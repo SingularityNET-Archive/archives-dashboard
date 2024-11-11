@@ -37,7 +37,7 @@ const Home: NextPage = () => {
         <div>
           <div>
             <h1>Archives Dashboard</h1>
-            <h2 className={styles.heading2}>A few things to note when using the Dashboard</h2>
+            <h2 className={styles.heading2}>A few things to note when using the Archives Dashboard</h2>
           </div>
           <div>
             <ul>
