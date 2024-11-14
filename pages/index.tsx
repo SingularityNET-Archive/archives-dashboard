@@ -1,14 +1,11 @@
-import { useState, useEffect } from "react";
+// ../pages/index.tsx
 import type { NextPage } from "next";
 import styles from '../styles/home.module.css';
-import axios from 'axios';
 
 const Home: NextPage = () => {
-  const [loading, setLoading] = useState<boolean>(false);
 
   return (
     <div className={styles.container}>
-      {!loading && (
         <div>
           <div>
             <h1>Archives Dashboard</h1>
@@ -30,7 +27,6 @@ const Home: NextPage = () => {
             </a>
           </div>
         </div>
-      )}
     </div>
   );
 };
