@@ -1,19 +1,21 @@
+// ../pages/_app.tsx
 import "../styles/globals.css";
 import type { AppProps } from "next/app";
 import Nav from '../components/nav';
 import { MyVariableProvider } from '../context/MyVariableContext';  
+import { MeetingSummariesProvider } from '../context/MeetingSummariesContext';
 
 function MyApp({ Component, pageProps }: AppProps) {
   return (
     <MyVariableProvider> 
-      <div>
-          <div>
-              <Nav />
-          </div>
-          <div>
-              <Component {...pageProps} />
-          </div>
-      </div>
+        <div>
+            <div>
+                <Nav />
+            </div>
+            <div>
+                <Component {...pageProps} />
+            </div>
+        </div>
     </MyVariableProvider> 
   );
 }
