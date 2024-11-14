@@ -1,11 +1,11 @@
 // components/tables/DecisionsTable.tsx
 import { useMeetingSummaries } from '../../context/MeetingSummariesContext';
 import { formatDate } from '../../utils/dateFormatting';
-import { Decision, FilterState } from '../../types/meetings';
+import { FilterState, MeetingSummary } from '../../types/meetings';
 
 interface DecisionsTableProps {
   filters: FilterState;
-  initialData?: any;
+  initialData?: MeetingSummary[];
 }
 
 export default function DecisionsTable({ filters }: DecisionsTableProps) {
