@@ -1,35 +1,24 @@
-// src/components/tables/DecisionsTable.tsx
-interface Decision {
-  id: string;
-  workgroup: string;
-  decision: string;
-  rationale: string;
-  effect: string;
-  date: string;
-}
+// components/tables/DecisionsTable.tsx
+import { useMeetingSummaries } from '../../context/MeetingSummariesContext';
+import { formatDate } from '../../utils/dateFormatting';
+import { Decision, FilterState } from '../../types/meetings';
 
 interface DecisionsTableProps {
-  filters: {
-    workgroup: string;
-    status: string;
-    search: string;
-    dateRange: { start: string; end: string; }
-  };
+  filters: FilterState;
+  initialData?: any;
 }
 
 export default function DecisionsTable({ filters }: DecisionsTableProps) {
-  // In a real app, you'd fetch this from Supabase based on filters
-  const decisions: Decision[] = [
-    {
-      id: '1',
-      workgroup: 'Treasury Guild',
-      decision: 'Adopt TypeScript',
-      rationale: 'Better type safety and developer experience',
-      effect: 'affectsOnlyThisWorkgroup',
-      date: '2024-03-15',
-    },
-    // Add more example data
-  ];
+  const { getDecisions, loading } = useMeetingSummaries();
+  
+  const decisions = getDecisions().filter(decision => {
+    const matchesWorkgroup = !filters.workgroup || decision.workgroup_id === filters.workgroup;
+    const matchesSearch = !filters.search || 
+      decision.decision.toLowerCase().includes(filters.search.toLowerCase());
+    return matchesWorkgroup && matchesSearch;
+  });
+
+  if (loading) return <div>Loading...</div>;
 
   return (
     <div className="table-container">
@@ -38,19 +27,17 @@ export default function DecisionsTable({ filters }: DecisionsTableProps) {
           <tr>
             <th>Workgroup</th>
             <th>Decision</th>
-            <th>Rationale</th>
             <th>Effect</th>
             <th>Date</th>
           </tr>
         </thead>
         <tbody>
-          {decisions.map((decision) => (
-            <tr key={decision.id}>
+          {decisions.map((decision, index) => (
+            <tr key={index}>
               <td>{decision.workgroup}</td>
               <td>{decision.decision}</td>
-              <td>{decision.rationale}</td>
               <td>{decision.effect}</td>
-              <td>{new Date(decision.date).toLocaleDateString()}</td>
+              <td>{formatDate(decision.date)}</td>
             </tr>
           ))}
         </tbody>

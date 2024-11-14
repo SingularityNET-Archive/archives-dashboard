@@ -1,35 +1,25 @@
-// src/components/tables/ActionItemsTable.tsx
-interface ActionItem {
-  id: string;
-  text: string;
-  assignee: string;
-  dueDate: string;
-  status: string;
-  workgroup: string;
-}
+// components/tables/ActionItemsTable.tsx
+import { formatDate } from '../../utils/dateFormatting';
+import { useMeetingSummaries } from '../../context/MeetingSummariesContext';
+import { ActionItem, FilterState } from '../../types/meetings';
 
 interface ActionItemsTableProps {
-  filters: {
-    workgroup: string;
-    status: string;
-    search: string;
-    dateRange: { start: string; end: string; }
-  };
+  filters: FilterState;
+  initialData?: any;
 }
 
 export default function ActionItemsTable({ filters }: ActionItemsTableProps) {
-  // In a real app, you'd fetch this from Supabase based on filters
-  const actionItems: ActionItem[] = [
-    {
-      id: '1',
-      text: 'Set up TypeScript configuration',
-      assignee: 'John Doe',
-      dueDate: '2024-03-20',
-      status: 'in-progress',
-      workgroup: 'Treasury Guild',
-    },
-    // Add more example data
-  ];
+  const { getActionItems, loading } = useMeetingSummaries();
+  
+  const actionItems = getActionItems().filter(item => {
+    const matchesWorkgroup = !filters.workgroup || item.workgroup_id === filters.workgroup;
+    const matchesStatus = !filters.status || item.status === filters.status;
+    const matchesSearch = !filters.search || 
+      item.text.toLowerCase().includes(filters.search.toLowerCase());
+    return matchesWorkgroup && matchesStatus && matchesSearch;
+  });
+
+  if (loading) return <div>Loading...</div>;
 
   return (
     <div className="table-container">
@@ -44,11 +34,11 @@ export default function ActionItemsTable({ filters }: ActionItemsTableProps) {
           </tr>
         </thead>
         <tbody>
-          {actionItems.map((item) => (
-            <tr key={item.id}>
+          {actionItems.map((item, index) => (
+            <tr key={index}>
               <td>{item.text}</td>
               <td>{item.assignee}</td>
-              <td>{new Date(item.dueDate).toLocaleDateString()}</td>
+              <td>{formatDate(item.dueDate)}</td>
               <td>
                 <span className={`status-badge status-${item.status}`}>
                   {item.status}

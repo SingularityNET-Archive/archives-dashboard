@@ -18,9 +18,8 @@ export default async function handler(req, res) {
 
   try {
     let { data, error } = await supabase
-      .from('meetingsummaries')
-      .select('summary, updated_at, confirmed')
-      .eq('confirmed', true); 
+      .from('workgroups')
+      .select('workgroup, workgroup_id');
     
     if (error) throw error;
 

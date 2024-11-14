@@ -5,31 +5,6 @@ import axios from 'axios';
 
 const Home: NextPage = () => {
   const [loading, setLoading] = useState<boolean>(false);
- /*useEffect(() => { // Used for testing the API
-    const fetchMeetingSummaries = async () => {
-      const SERVER_API_URL = '/api/getMeetingSummaries';
-      const API_KEY = process.env.NEXT_PUBLIC_SERVER_API_KEY; 
-
-      setLoading(true); // Start loading
-      try {
-        const response = await axios.get(SERVER_API_URL, {
-          headers: {
-            'api_key': API_KEY,
-          },
-        });
-
-        console.log(response.data);
-        // Handle your data here
-      } catch (error) {
-        console.error('Error fetching meeting summaries:', error);
-        // Handle error here
-      } finally {
-        setLoading(false); // End loading
-      }
-    };
-
-    fetchMeetingSummaries();
-  }, []);*/
 
   return (
     <div className={styles.container}>
