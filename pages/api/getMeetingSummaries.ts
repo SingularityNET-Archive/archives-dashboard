@@ -2,48 +2,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import supabase from "../../lib/supabaseClient";
 
-interface MeetingSummary {
-  meeting_id: string;
-  created_at: string;
-  updated_at: string;
-  confirmed: boolean;
-  summary: {
-    workgroup: string;
-    workgroup_id: string;
-    meetingInfo: {
-      name: string;
-      date: string;
-      host: string;
-      documenter: string;
-      peoplePresent: string;
-      purpose: string;
-      workingDocs: any[]; // You might want to type this more specifically
-      timestampedVideo: Record<string, any>;
-    };
-    agendaItems: Array<{
-      actionItems?: Array<{
-        text: string;
-        assignee: string;
-        dueDate: string;
-        status: string;
-      }>;
-      decisionItems?: Array<{
-        decision: string;
-        effect: string;
-      }>;
-      discussionPoints?: string[];
-      status: string;
-    }>;
-    tags: {
-      topicsCovered: string;
-      emotions: string;
-    };
-    type: string;
-  };
-  workgroup_id: string;
-  name: string;
-}
-
 export default async function handler(
   req: NextApiRequest, 
   res: NextApiResponse
