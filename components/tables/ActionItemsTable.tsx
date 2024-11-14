@@ -1,11 +1,11 @@
 // components/tables/ActionItemsTable.tsx
 import { formatDate } from '../../utils/dateFormatting';
 import { useMeetingSummaries } from '../../context/MeetingSummariesContext';
-import { ActionItem, FilterState } from '../../types/meetings';
+import { FilterState, MeetingSummary } from '../../types/meetings';
 
 interface ActionItemsTableProps {
   filters: FilterState;
-  initialData?: any;
+  initialData?: MeetingSummary[];
 }
 
 export default function ActionItemsTable({ filters }: ActionItemsTableProps) {
