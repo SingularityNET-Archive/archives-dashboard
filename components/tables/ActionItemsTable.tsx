@@ -2,6 +2,7 @@
 import { formatDate } from '../../utils/dateFormatting';
 import { useMeetingSummaries } from '../../context/MeetingSummariesContext';
 import { FilterState, MeetingSummary, ActionItem } from '../../types/meetings';
+import HighlightedText from '../common/HighlightedText';
 import styles from '../../styles/ActionItemsTable.module.css';
 
 interface ActionItemsTableProps {
@@ -61,8 +62,18 @@ export default function ActionItemsTable({ filters }: ActionItemsTableProps) {
         <tbody>
           {actionItems.map((item, index) => (
             <tr key={`${item.workgroup_id}-${index}`}>
-              <td>{item.text}</td>
-              <td>{item.assignee || 'N/A'}</td>
+              <td>
+                <HighlightedText 
+                  text={item.text} 
+                  searchTerm={filters.search}
+                />
+              </td>
+              <td>
+                <HighlightedText 
+                  text={item.assignee || 'N/A'} 
+                  searchTerm={filters.search}
+                />
+              </td>
               <td>{item.dueDate ? formatDate(item.dueDate) : 'No date set'}</td>
               <td>
                 <span
@@ -71,7 +82,12 @@ export default function ActionItemsTable({ filters }: ActionItemsTableProps) {
                   {item.status}
                 </span>
               </td>
-              <td>{item.workgroup || 'Unknown'}</td>
+              <td>
+                <HighlightedText 
+                  text={item.workgroup || 'Unknown'} 
+                  searchTerm={filters.search}
+                />
+              </td>
             </tr>
           ))}
           {actionItems.length === 0 && (

@@ -2,6 +2,7 @@
 import { useMeetingSummaries } from '../../context/MeetingSummariesContext';
 import { formatDate } from '../../utils/dateFormatting';
 import { FilterState, MeetingSummary } from '../../types/meetings';
+import HighlightedText from '../common/HighlightedText';
 import styles from '../../styles/DecisionsTable.module.css';
 
 interface DecisionsTableProps {
@@ -35,13 +36,37 @@ export default function DecisionsTable({ filters }: DecisionsTableProps) {
         </thead>
         <tbody>
           {decisions.map((decision, index) => (
-            <tr key={index}>
-              <td>{decision.workgroup}</td>
-              <td>{decision.decision}</td>
-              <td className={styles.effectCell}>{decision.effect}</td>
-              <td className={styles.dateCell}>{formatDate(decision.date)}</td>
+            <tr key={`${decision.workgroup_id}-${index}`}>
+              <td>
+                <HighlightedText 
+                  text={decision.workgroup} 
+                  searchTerm={filters.search}
+                />
+              </td>
+              <td>
+                <HighlightedText 
+                  text={decision.decision} 
+                  searchTerm={filters.search}
+                />
+              </td>
+              <td className={styles.effectCell}>
+                <HighlightedText 
+                  text={decision.effect || ''} 
+                  searchTerm={filters.search}
+                />
+              </td>
+              <td className={styles.dateCell}>
+                {formatDate(decision.date)}
+              </td>
             </tr>
           ))}
+          {decisions.length === 0 && (
+            <tr>
+              <td colSpan={4} className={styles.noResults}>
+                No decisions found
+              </td>
+            </tr>
+          )}
         </tbody>
       </table>
     </div>
