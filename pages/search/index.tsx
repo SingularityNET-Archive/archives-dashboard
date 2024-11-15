@@ -9,6 +9,7 @@ import DecisionsTable from '../../components/tables/DecisionsTable';
 import ActionItemsTable from '../../components/tables/ActionItemsTable';
 import DataDebugger from '../../components/debug/DataDebugger';
 import { MeetingSummariesPageProvider } from '../../components/providers/MeetingSummariesPageProvider';
+import styles from '../../styles/search.module.css';
 
 interface SearchPageProps {
   initialData: MeetingSummary[];
@@ -23,37 +24,46 @@ export default function SearchPage({ initialData }: SearchPageProps) {
     dateRange: { start: '', end: '' }
   });
 
+  const handleTabChange = (tab: 'decisions' | 'actions') => {
+    setActiveTab(tab);
+    // Clear the search and status when switching tabs
+    setFilters(prev => ({ ...prev, search: '', status: '' }));
+  };
+
   return (
     <MeetingSummariesPageProvider initialData={initialData}>
-      <div className="search-page">
+      <div className={styles.searchPage}>
         <DataDebugger filters={filters} />
-        <div className="filters-section">
+        <div className={styles.filtersSection}>
           <SearchBar 
             value={filters.search} 
-            onChange={(value) => setFilters(prev => ({ ...prev, search: value }))} 
+            onChange={(value) => setFilters(prev => ({ ...prev, search: value }))}
+            placeholder={`Search ${activeTab === 'decisions' ? 'decisions' : 'action items'}...`}
           />
-          <div className="filter-group">
+          <div className={styles.filterGroup}>
             <WorkgroupFilter 
               value={filters.workgroup}
               onChange={(value) => setFilters(prev => ({ ...prev, workgroup: value }))}
             />
-            <StatusFilter 
-              value={filters.status}
-              onChange={(value) => setFilters(prev => ({ ...prev, status: value }))}
-            />
+            {activeTab === 'actions' && (
+              <StatusFilter 
+                value={filters.status}
+                onChange={(value) => setFilters(prev => ({ ...prev, status: value }))}
+              />
+            )}
           </div>
         </div>
         
-        <div className="tabs">
+        <div className={styles.tabs}>
           <button 
-            className={`tab ${activeTab === 'decisions' ? 'active' : ''}`}
-            onClick={() => setActiveTab('decisions')}
+            className={`${styles.tab} ${activeTab === 'decisions' ? styles.active : ''}`}
+            onClick={() => handleTabChange('decisions')}
           >
             Decisions
           </button>
           <button 
-            className={`tab ${activeTab === 'actions' ? 'active' : ''}`}
-            onClick={() => setActiveTab('actions')}
+            className={`${styles.tab} ${activeTab === 'actions' ? styles.active : ''}`}
+            onClick={() => handleTabChange('actions')}
           >
             Action Items
           </button>
@@ -71,9 +81,10 @@ export default function SearchPage({ initialData }: SearchPageProps) {
 
 export const getServerSideProps: GetServerSideProps = async () => {
   const API_KEY = process.env.NEXT_PUBLIC_SERVER_API_KEY;
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
 
   try {
-    const response = await fetch('/api/getMeetingSummaries', {
+    const response = await fetch(`${baseUrl}/api/getMeetingSummaries`, {
       headers: {
         'api_key': API_KEY || '',
       },

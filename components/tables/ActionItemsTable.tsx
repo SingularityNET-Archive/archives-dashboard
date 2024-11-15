@@ -1,29 +1,54 @@
 // components/tables/ActionItemsTable.tsx
 import { formatDate } from '../../utils/dateFormatting';
 import { useMeetingSummaries } from '../../context/MeetingSummariesContext';
-import { FilterState, MeetingSummary } from '../../types/meetings';
+import { FilterState, MeetingSummary, ActionItem } from '../../types/meetings';
+import styles from '../../styles/ActionItemsTable.module.css';
 
 interface ActionItemsTableProps {
   filters: FilterState;
   initialData?: MeetingSummary[];
 }
 
+// Type guard to check if an action item is valid
+const isValidActionItem = (item: Partial<ActionItem>): item is ActionItem => {
+  return Boolean(
+    item &&
+    typeof item.text === 'string' &&
+    typeof item.workgroup_id === 'string' &&
+    typeof item.status === 'string'
+  );
+};
+
 export default function ActionItemsTable({ filters }: ActionItemsTableProps) {
   const { getActionItems, loading } = useMeetingSummaries();
   
   const actionItems = getActionItems().filter(item => {
+    // First check if the item is valid
+    if (!isValidActionItem(item)) {
+      return false;
+    }
+
     const matchesWorkgroup = !filters.workgroup || item.workgroup_id === filters.workgroup;
     const matchesStatus = !filters.status || item.status === filters.status;
-    const matchesSearch = !filters.search || 
-      item.text.toLowerCase().includes(filters.search.toLowerCase());
+    
+    // Safely handle the search matching
+    const searchTerm = filters.search?.toLowerCase() || '';
+    const matchesSearch = !searchTerm || [
+      item.text,
+      item.assignee,
+      item.workgroup
+    ].some(field => 
+      typeof field === 'string' && field.toLowerCase().includes(searchTerm)
+    );
+
     return matchesWorkgroup && matchesStatus && matchesSearch;
   });
 
   if (loading) return <div>Loading...</div>;
 
   return (
-    <div className="table-container">
-      <table>
+    <div className={styles.tableContainer}>
+      <table className={styles.table}>
         <thead>
           <tr>
             <th>Action Item</th>
@@ -35,18 +60,27 @@ export default function ActionItemsTable({ filters }: ActionItemsTableProps) {
         </thead>
         <tbody>
           {actionItems.map((item, index) => (
-            <tr key={index}>
+            <tr key={`${item.workgroup_id}-${index}`}>
               <td>{item.text}</td>
-              <td>{item.assignee}</td>
-              <td>{formatDate(item.dueDate)}</td>
+              <td>{item.assignee || 'N/A'}</td>
+              <td>{item.dueDate ? formatDate(item.dueDate) : 'No date set'}</td>
               <td>
-                <span className={`status-badge status-${item.status}`}>
+                <span
+                  className={`${styles.statusBadge} ${styles[`status${item.status.replace(/\b\w/g, char => char.toUpperCase()).replace(/\s+/g, '')}`]}`}
+                >
                   {item.status}
                 </span>
               </td>
-              <td>{item.workgroup}</td>
+              <td>{item.workgroup || 'Unknown'}</td>
             </tr>
           ))}
+          {actionItems.length === 0 && (
+            <tr>
+              <td colSpan={5} className={styles.noResults}>
+                No action items found
+              </td>
+            </tr>
+          )}
         </tbody>
       </table>
     </div>

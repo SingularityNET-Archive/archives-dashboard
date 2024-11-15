@@ -1,16 +1,19 @@
-// src/components/filters/SearchBar.tsx
+// components/filters/SearchBar.tsx
+import styles from '../../styles/SearchBar.module.css';
+
 interface SearchBarProps {
   value: string;
   onChange: (value: string) => void;
+  placeholder: string;
 }
 
-export default function SearchBar({ value, onChange }: SearchBarProps) {
+export default function SearchBar({ value, onChange, placeholder }: SearchBarProps) {
   return (
-    <div className="search-container">
+    <div className={styles.searchContainer}>
       <input
         type="text"
-        className="search-bar"
-        placeholder="Search decisions, action items, or topics..."
+        className={styles.searchBar}
+        placeholder={placeholder}
         value={value}
         onChange={(e) => onChange(e.target.value)}
       />
