@@ -1,0 +1,147 @@
+/* SharedTable.module.css */
+.tableContainer {
+    overflow-x: auto;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+  
+  .table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 100%;
+    table-layout: fixed; /* Keep fixed layout for consistent column widths */
+  }
+  
+  .table th {
+    background-color: #f9fafb;
+    padding: 0.75rem 1rem;
+    text-align: left;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    white-space: normal; /* Allow header text to wrap */
+    vertical-align: top; /* Align header text to top */
+  }
+  
+  .table td {
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+    color: #111827;
+    border-top: 1px solid #e5e7eb;
+    white-space: normal; /* Allow cell text to wrap */
+    vertical-align: top; /* Align cell content to top */
+    word-wrap: break-word; /* Break long words if necessary */
+    min-width: 0; /* Allows the cell to shrink below content width */
+  }
+  
+  /* Custom column widths */
+  .textColumn {
+    width: 30%;
+  }
+  
+  .standardColumn {
+    width: 15%;
+  }
+  
+  .effectColumn {
+    width: 20%;
+  }
+
+  .dateColumn {
+    width: 12%;
+  }
+  
+  .statusColumn {
+    width: 13%;
+  }
+  
+  /* Keep status badge on one line */
+  .statusBadge {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: 5000px;
+    display: inline-block;
+    white-space: nowrap; /* Prevent status from wrapping */
+    text-align: center;
+  }
+
+  .statusTodo {
+    background-color: #fef3c7;
+    color: #92400e;
+  }
+  
+  .statusInProgress {
+    background-color: #dbeafe;
+    color: #1e40af;
+  }
+  
+  .statusDone {
+    background-color: #d1fae5;
+    color: #065f46;
+  }
+  
+  .statusCancelled {
+    background-color: #f3f4f6;
+    color: #1f2937;
+  }
+  
+  /* Preserve date formatting */
+  .dateCell {
+    white-space: nowrap; /* Keep dates on one line */
+  }
+  
+  /* Optional: Add some max-height with scrolling for very tall cells */
+  .table td {
+    max-height: 150px; /* Adjust this value as needed */
+    overflow-y: auto;
+  }
+  
+  /* Responsive adjustments */
+  @media (max-width: 768px) {
+    .table th, .table td {
+      padding: 0.5rem;
+    }
+    
+    .textColumn {
+      width: 25%;
+    }
+
+    .statusColumn {
+        width: 22%;
+    }
+      
+    .standardColumn {
+      width: 20%;
+    }
+  }
+
+  .meetingStats {
+    display: flex;
+    gap: 1rem;
+  }
+  
+  .meetingStats span {
+    font-size: 0.875rem;
+    color: #666;
+  }
+  
+  .viewDetailsLink {
+    color: #0070f3;
+    text-decoration: none;
+  }
+  
+  .viewDetailsLink:hover {
+    text-decoration: underline;
+  }
+  
+  .metricsColumn {
+    width: 25%;
+  }
+  
+  .actionColumn {
+    width: 100px;
+  }

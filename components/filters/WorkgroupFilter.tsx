@@ -1,6 +1,7 @@
-// src/components/filters/WorkgroupFilter.tsx
+// components/filters/WorkgroupFilter.tsx
 import React from 'react';
 import { useMeetingSummaries } from '../../context/MeetingSummariesContext';
+import styles from '../../styles/WorkgroupFilter.module.css';
 
 interface WorkgroupFilterProps {
   value: string;
@@ -10,7 +11,6 @@ interface WorkgroupFilterProps {
 const WorkgroupFilter = ({ value, onChange }: WorkgroupFilterProps) => {
   const { summaries } = useMeetingSummaries();
   
-  // Extract unique workgroups from summaries
   const uniqueWorkgroups = React.useMemo(() => {
     const workgroups = summaries
       .map(summary => ({
@@ -21,23 +21,22 @@ const WorkgroupFilter = ({ value, onChange }: WorkgroupFilterProps) => {
         Boolean(workgroup.id && workgroup.name)
       );
 
-    // Remove duplicates by workgroup_id
     return Array.from(
       new Map(workgroups.map(item => [item.id, item])).values()
     ).sort((a, b) => a.name.localeCompare(b.name));
   }, [summaries]);
 
   return (
-    <div className="filter-container">
+    <div className={styles.filterContainer}>
       <label 
         htmlFor="workgroup" 
-        className="block text-sm font-medium text-gray-700 mb-1"
+        className={styles.filterLabel}
       >
         Workgroup
       </label>
       <select
         id="workgroup"
-        className="block w-full rounded-md border border-gray-300 bg-white py-2 px-3 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 sm:text-sm"
+        className={styles.filterSelect}
         value={value}
         onChange={(e) => onChange(e.target.value)}
       >

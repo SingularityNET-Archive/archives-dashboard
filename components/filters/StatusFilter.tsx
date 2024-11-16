@@ -1,28 +1,48 @@
-// src/components/filters/StatusFilter.tsx
+// components/filters/StatusFilter.tsx
+import { useMemo } from 'react';
+import { useMeetingSummaries } from '../../context/MeetingSummariesContext';
+import styles from '../../styles/StatusFilter.module.css';
+
 interface StatusFilterProps {
   value: string;
   onChange: (value: string) => void;
 }
 
+interface StatusOption {
+  value: string;
+  label: string;
+}
+
 export default function StatusFilter({ value, onChange }: StatusFilterProps) {
-  const statuses = [
-    { value: 'todo', label: 'To Do' },
-    { value: 'in-progress', label: 'In Progress' },
-    { value: 'completed', label: 'Completed' },
-    { value: 'carry-over', label: 'Carry Over' },
-  ];
+  const { getActionItems } = useMeetingSummaries();
+  
+  const statusOptions = useMemo(() => {
+    const actionItems = getActionItems();
+    const uniqueStatuses = new Set(actionItems.map(item => item.status));
+    
+    return Array.from(uniqueStatuses)
+      .filter(Boolean) // Remove any undefined/null values
+      .map(status => ({
+        value: status,
+        label: status
+          .split('-')
+          .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+          .join(' ')
+      }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+  }, [getActionItems]);
 
   return (
-    <div className="filter-container">
+    <div className={styles.filterContainer}>
       <label htmlFor="status">Status</label>
       <select
         id="status"
-        className="filter-select"
+        className={styles.filterSelect}
         value={value}
         onChange={(e) => onChange(e.target.value)}
       >
         <option value="">All Statuses</option>
-        {statuses.map((status) => (
+        {statusOptions.map((status) => (
           <option key={status.value} value={status.value}>
             {status.label}
           </option>

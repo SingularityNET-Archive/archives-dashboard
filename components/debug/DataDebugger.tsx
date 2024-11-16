@@ -1,6 +1,7 @@
 // src/components/debug/DataDebugger.tsx
 import { useMeetingSummaries } from '../../context/MeetingSummariesContext';
 import { useEffect } from 'react';
+import { Decision, ActionItem } from '../../types/meetings';
 
 interface DataDebuggerProps {
   filters: {
@@ -10,6 +11,24 @@ interface DataDebuggerProps {
     dateRange: { start: string; end: string; }
   };
 }
+
+// Type guards
+const isValidDecision = (decision: Partial<Decision>): decision is Decision => {
+  return Boolean(
+    decision &&
+    typeof decision.decision === 'string' &&
+    typeof decision.workgroup === 'string'
+  );
+};
+
+const isValidActionItem = (item: Partial<ActionItem>): item is ActionItem => {
+  return Boolean(
+    item &&
+    typeof item.text === 'string' &&
+    typeof item.workgroup === 'string' &&
+    typeof item.status === 'string'
+  );
+};
 
 const DataDebugger = ({ filters }: DataDebuggerProps) => {
   const { getDecisions, getActionItems, summaries } = useMeetingSummaries();
@@ -30,17 +49,35 @@ const DataDebugger = ({ filters }: DataDebuggerProps) => {
     
     // Log filtered data
     const filteredDecisions = decisions.filter(decision => {
+      if (!isValidDecision(decision)) {
+        return false;
+      }
+
       const matchesWorkgroup = !filters.workgroup || decision.workgroup === filters.workgroup;
-      const matchesSearch = !filters.search || 
-        decision.decision.toLowerCase().includes(filters.search.toLowerCase());
+      const searchTerm = filters.search?.toLowerCase() || '';
+      const matchesSearch = !searchTerm || 
+        (decision.decision && decision.decision.toLowerCase().includes(searchTerm));
+      
       return matchesWorkgroup && matchesSearch;
     });
 
     const filteredActionItems = actionItems.filter(item => {
+      if (!isValidActionItem(item)) {
+        return false;
+      }
+
       const matchesWorkgroup = !filters.workgroup || item.workgroup === filters.workgroup;
       const matchesStatus = !filters.status || item.status === filters.status;
-      const matchesSearch = !filters.search || 
-        item.text.toLowerCase().includes(filters.search.toLowerCase());
+      const searchTerm = filters.search?.toLowerCase() || '';
+      
+      const matchesSearch = !searchTerm || [
+        item.text,
+        item.assignee,
+        item.workgroup
+      ].some(field => 
+        typeof field === 'string' && field.toLowerCase().includes(searchTerm)
+      );
+
       return matchesWorkgroup && matchesStatus && matchesSearch;
     });
 
