@@ -5,8 +5,10 @@ import { MeetingSummary, FilterState } from '../../types/meetings';
 import SearchBar from '../../components/filters/SearchBar';
 import WorkgroupFilter from '../../components/filters/WorkgroupFilter';
 import StatusFilter from '../../components/filters/StatusFilter';
+import DateFilter from '../../components/filters/DateFilter';
 import DecisionsTable from '../../components/tables/DecisionsTable';
 import ActionItemsTable from '../../components/tables/ActionItemsTable';
+import MeetingsTable from '../../components/tables/MeetingsTable';
 import DataDebugger from '../../components/debug/DataDebugger';
 import { MeetingSummariesPageProvider } from '../../components/providers/MeetingSummariesPageProvider';
 import styles from '../../styles/search.module.css';
@@ -16,15 +18,16 @@ interface SearchPageProps {
 }
 
 export default function SearchPage({ initialData }: SearchPageProps) {
-  const [activeTab, setActiveTab] = useState<'decisions' | 'actions'>('decisions');
+  const [activeTab, setActiveTab] = useState<'decisions' | 'actions' | 'meetings'>('decisions');
   const [filters, setFilters] = useState<FilterState>({
     workgroup: '',
     status: '',
     search: '',
+    date: '', 
     dateRange: { start: '', end: '' }
   });
 
-  const handleTabChange = (tab: 'decisions' | 'actions') => {
+  const handleTabChange = (tab: 'decisions' | 'actions' | 'meetings') => {
     setActiveTab(tab);
     // Clear the search and status when switching tabs
     setFilters(prev => ({ ...prev, search: '', status: '' }));
@@ -45,6 +48,10 @@ export default function SearchPage({ initialData }: SearchPageProps) {
               value={filters.workgroup}
               onChange={(value) => setFilters(prev => ({ ...prev, workgroup: value }))}
             />
+            <DateFilter
+              value={filters.date}
+              onChange={(value) => setFilters(prev => ({ ...prev, date: value }))}
+            />
             {activeTab === 'actions' && (
               <StatusFilter 
                 value={filters.status}
@@ -53,7 +60,6 @@ export default function SearchPage({ initialData }: SearchPageProps) {
             )}
           </div>
         </div>
-        
         <div className={styles.tabs}>
           <button 
             className={`${styles.tab} ${activeTab === 'decisions' ? styles.active : ''}`}
@@ -67,12 +73,20 @@ export default function SearchPage({ initialData }: SearchPageProps) {
           >
             Action Items
           </button>
+          <button 
+            className={`${styles.tab} ${activeTab === 'meetings' ? styles.active : ''}`}
+            onClick={() => handleTabChange('meetings')}
+          >
+            Meetings
+          </button>
         </div>
-  
+          
         {activeTab === 'decisions' ? (
           <DecisionsTable filters={filters} initialData={initialData} />
-        ) : (
+        ) : activeTab === 'actions' ? (
           <ActionItemsTable filters={filters} initialData={initialData} />
+        ) : (
+          <MeetingsTable filters={filters} initialData={initialData} />
         )}
       </div>
     </MeetingSummariesPageProvider>

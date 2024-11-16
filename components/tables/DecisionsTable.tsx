@@ -1,9 +1,10 @@
 // components/tables/DecisionsTable.tsx
 import { useMeetingSummaries } from '../../context/MeetingSummariesContext';
 import { formatDate } from '../../utils/dateFormatting';
+import { isSameDate } from '../../utils/dateUtils';
 import { FilterState, MeetingSummary } from '../../types/meetings';
 import HighlightedText from '../common/HighlightedText';
-import styles from '../../styles/DecisionsTable.module.css';
+import styles from '../../styles/SharedTable.module.css';
 
 interface DecisionsTableProps {
   filters: FilterState;
@@ -18,7 +19,11 @@ export default function DecisionsTable({ filters }: DecisionsTableProps) {
     const matchesSearch = !filters.search || 
       (decision.decision.toLowerCase().includes(filters.search.toLowerCase()) ||
        decision.effect?.toLowerCase().includes(filters.search.toLowerCase()));
-    return matchesWorkgroup && matchesSearch;
+
+    const matchesDate = !filters.date || 
+      isSameDate(decision.date, filters.date);
+   
+    return matchesWorkgroup && matchesSearch && matchesDate;
   });
 
   if (loading) return <div>Loading...</div>;
@@ -28,10 +33,10 @@ export default function DecisionsTable({ filters }: DecisionsTableProps) {
       <table className={styles.table}>
         <thead>
           <tr>
-            <th>Workgroup</th>
-            <th>Decision</th>
-            <th>Effect</th>
-            <th>Date</th>
+            <th className={styles.standardColumn}>Workgroup</th>
+            <th className={styles.textColumn}>Decision</th>
+            <th className={styles.effectColumn}>Effect</th>
+            <th className={styles.dateColumn}>Date</th>
           </tr>
         </thead>
         <tbody>

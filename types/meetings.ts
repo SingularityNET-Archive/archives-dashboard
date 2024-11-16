@@ -77,8 +77,6 @@ export interface FilterState {
   workgroup: string;
   status: string;
   search: string;
-  dateRange: {
-    start: string;
-    end: string;
-  };
+  date: string; 
+  dateRange: { start: string; end: string };
 }

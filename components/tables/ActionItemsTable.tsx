@@ -1,16 +1,16 @@
 // components/tables/ActionItemsTable.tsx
 import { formatDate } from '../../utils/dateFormatting';
+import { isSameDate } from '../../utils/dateUtils';
 import { useMeetingSummaries } from '../../context/MeetingSummariesContext';
 import { FilterState, MeetingSummary, ActionItem } from '../../types/meetings';
 import HighlightedText from '../common/HighlightedText';
-import styles from '../../styles/ActionItemsTable.module.css';
+import styles from '../../styles/SharedTable.module.css';
 
 interface ActionItemsTableProps {
   filters: FilterState;
   initialData?: MeetingSummary[];
 }
 
-// Type guard to check if an action item is valid
 const isValidActionItem = (item: Partial<ActionItem>): item is ActionItem => {
   return Boolean(
     item &&
@@ -24,7 +24,6 @@ export default function ActionItemsTable({ filters }: ActionItemsTableProps) {
   const { getActionItems, loading } = useMeetingSummaries();
   
   const actionItems = getActionItems().filter(item => {
-    // First check if the item is valid
     if (!isValidActionItem(item)) {
       return false;
     }
@@ -32,7 +31,6 @@ export default function ActionItemsTable({ filters }: ActionItemsTableProps) {
     const matchesWorkgroup = !filters.workgroup || item.workgroup_id === filters.workgroup;
     const matchesStatus = !filters.status || item.status === filters.status;
     
-    // Safely handle the search matching
     const searchTerm = filters.search?.toLowerCase() || '';
     const matchesSearch = !searchTerm || [
       item.text,
@@ -42,9 +40,12 @@ export default function ActionItemsTable({ filters }: ActionItemsTableProps) {
       typeof field === 'string' && field.toLowerCase().includes(searchTerm)
     );
 
-    return matchesWorkgroup && matchesStatus && matchesSearch;
-  });
+    const matchesDate = !filters.date || 
+      (item.dueDate && isSameDate(item.dueDate, filters.date));
 
+    return matchesWorkgroup && matchesStatus && matchesSearch && matchesDate;
+  });
+  
   if (loading) return <div>Loading...</div>;
 
   return (
@@ -52,11 +53,11 @@ export default function ActionItemsTable({ filters }: ActionItemsTableProps) {
       <table className={styles.table}>
         <thead>
           <tr>
-            <th>Action Item</th>
-            <th>Assignee</th>
-            <th>Due Date</th>
-            <th>Status</th>
-            <th>Workgroup</th>
+            <th className={styles.textColumn}>Action Item</th>
+            <th className={styles.standardColumn}>Assignee</th>
+            <th className={styles.dateColumn}>Due Date</th>
+            <th className={styles.statusColumn}>Status</th>
+            <th className={styles.standardColumn}>Workgroup</th>
           </tr>
         </thead>
         <tbody>
@@ -74,11 +75,11 @@ export default function ActionItemsTable({ filters }: ActionItemsTableProps) {
                   searchTerm={filters.search}
                 />
               </td>
-              <td>{item.dueDate ? formatDate(item.dueDate) : 'No date set'}</td>
+              <td className={styles.dateCell}>
+                {item.dueDate ? formatDate(item.dueDate) : 'No date set'}
+              </td>
               <td>
-                <span
-                  className={`${styles.statusBadge} ${styles[`status${item.status.replace(/\b\w/g, char => char.toUpperCase()).replace(/\s+/g, '')}`]}`}
-                >
+                <span className={`${styles.statusBadge} ${styles[`status${item.status.replace(/\b\w/g, char => char.toUpperCase()).replace(/\s+/g, '')}`]}`}>
                   {item.status}
                 </span>
               </td>
