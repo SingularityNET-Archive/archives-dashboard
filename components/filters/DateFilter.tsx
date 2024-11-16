@@ -1,5 +1,4 @@
 // components/filters/DateFilter.tsx
-import { useState } from 'react';
 import styles from '../../styles/Filters.module.css';
 
 interface DateFilterProps {
@@ -8,7 +7,7 @@ interface DateFilterProps {
   placeholder?: string;
 }
 
-export default function DateFilter({ value, onChange, placeholder = 'Select date' }: DateFilterProps) {
+export default function DateFilter({ value, onChange }: DateFilterProps) {
   return (
     <div className={styles.filterContainer}>
       <label htmlFor="dateFilter" className={styles.filterLabel}>

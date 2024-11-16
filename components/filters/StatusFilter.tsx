@@ -8,11 +8,6 @@ interface StatusFilterProps {
   onChange: (value: string) => void;
 }
 
-interface StatusOption {
-  value: string;
-  label: string;
-}
-
 export default function StatusFilter({ value, onChange }: StatusFilterProps) {
   const { getActionItems } = useMeetingSummaries();
   

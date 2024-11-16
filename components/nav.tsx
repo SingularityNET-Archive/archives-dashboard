@@ -1,6 +1,6 @@
 // ../components/nav.tsx
 import Link from 'next/link';
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { fetchLatestTag } from '../utils/fetchLatestTag';
 import styles from '../styles/nav.module.css';
 
