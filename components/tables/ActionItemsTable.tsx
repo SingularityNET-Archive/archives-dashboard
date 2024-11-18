@@ -43,7 +43,13 @@ export default function ActionItemsTable({ filters }: ActionItemsTableProps) {
     const matchesDate = !filters.date || 
       (item.dueDate && isSameDate(item.dueDate, filters.date));
 
-    return matchesWorkgroup && matchesStatus && matchesSearch && matchesDate;
+    const matchesAssignee = !filters.assignee || 
+    (item.assignee && 
+     item.assignee.split(',')
+       .map(name => name.trim())
+       .includes(filters.assignee));
+    
+    return matchesWorkgroup && matchesStatus && matchesSearch && matchesDate && matchesAssignee;
   });
   
   if (loading) return <div>Loading...</div>;

@@ -1,6 +1,7 @@
 // components/tables/DecisionsTable.tsx
 import { useMeetingSummaries } from '../../context/MeetingSummariesContext';
 import { formatDate } from '../../utils/dateFormatting';
+import { formatEffectType } from '../../utils/stringFormatting';
 import { isSameDate } from '../../utils/dateUtils';
 import { FilterState, MeetingSummary } from '../../types/meetings';
 import HighlightedText from '../common/HighlightedText';
@@ -19,11 +20,12 @@ export default function DecisionsTable({ filters }: DecisionsTableProps) {
     const matchesSearch = !filters.search || 
       (decision.decision.toLowerCase().includes(filters.search.toLowerCase()) ||
        decision.effect?.toLowerCase().includes(filters.search.toLowerCase()));
-
     const matchesDate = !filters.date || 
       isSameDate(decision.date, filters.date);
+    const matchesEffect = !filters.effect || 
+      decision.effect === filters.effect;
    
-    return matchesWorkgroup && matchesSearch && matchesDate;
+    return matchesWorkgroup && matchesSearch && matchesDate && matchesEffect;
   });
 
   if (loading) return <div>Loading...</div>;
@@ -56,7 +58,7 @@ export default function DecisionsTable({ filters }: DecisionsTableProps) {
               </td>
               <td className={styles.effectCell}>
                 <HighlightedText 
-                  text={decision.effect || ''} 
+                  text={formatEffectType(decision.effect || '')} 
                   searchTerm={filters.search}
                 />
               </td>
