@@ -58,7 +58,7 @@ export default function SearchPage({
 
   // Handle browser back/forward navigation
   useEffect(() => {
-    const handleRouteChange = (url: string) => {
+    const handleRouteChange = () => {
       // Ignore route changes that happen immediately after user actions
       const timeSinceLastUserAction = Date.now() - lastUserActionTimestamp.current;
       if (!isUserAction.current && timeSinceLastUserAction > 500) {
