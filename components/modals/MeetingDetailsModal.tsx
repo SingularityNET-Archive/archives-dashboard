@@ -3,14 +3,16 @@ import React from 'react';
 import { MeetingSummary } from '../../types/meetings';
 import { formatDate } from '../../utils/dateFormatting';
 import styles from '../../styles/SharedTable.module.css';
+import HighlightedText from '../common/HighlightedText';
 
 interface MeetingDetailsModalProps {
   meeting: MeetingSummary | null;
   isOpen: boolean;
   onClose: () => void;
+  searchTerm: string;
 }
 
-export default function MeetingDetailsModal({ meeting, isOpen, onClose }: MeetingDetailsModalProps) {
+export default function MeetingDetailsModal({ meeting, isOpen, onClose, searchTerm }: MeetingDetailsModalProps) {
   if (!isOpen || !meeting) return null;
 
   const hasLinks = meeting.summary.meetingInfo.googleSlides ||
@@ -32,7 +34,12 @@ export default function MeetingDetailsModal({ meeting, isOpen, onClose }: Meetin
           <div className={styles.modalContent}>
             {/* Header */}
             <div className={styles.modalHeader}>
-              <h2 className={styles.modalTitle}>{meeting.summary.meetingInfo.name}</h2>
+              <h2 className={styles.modalTitle}>
+                <HighlightedText 
+                  text={meeting.summary.meetingInfo.name} 
+                  searchTerm={searchTerm}
+                />
+              </h2>
               <button className={styles.closeButton} onClick={onClose}>✕</button>
             </div>
 
@@ -48,36 +55,66 @@ export default function MeetingDetailsModal({ meeting, isOpen, onClose }: Meetin
                   </div>
                   <div className={styles.infoItem}>
                     <p className={styles.infoLabel}>Workgroup</p>
-                    <p>{meeting.summary.workgroup}</p>
+                    <p>
+                      <HighlightedText 
+                        text={meeting.summary.workgroup} 
+                        searchTerm={searchTerm}
+                      />
+                    </p>
                   </div>
                   {meeting.summary.meetingInfo.host && (
                     <div className={styles.infoItem}>
                       <p className={styles.infoLabel}>Host</p>
-                      <p>{meeting.summary.meetingInfo.host}</p>
+                      <p>
+                        <HighlightedText 
+                          text={meeting.summary.meetingInfo.host} 
+                          searchTerm={searchTerm}
+                        />
+                      </p>
                     </div>
                   )}
                   {meeting.summary.meetingInfo.documenter && (
                     <div className={styles.infoItem}>
                       <p className={styles.infoLabel}>Documenter</p>
-                      <p>{meeting.summary.meetingInfo.documenter}</p>
+                      <p>
+                        <HighlightedText 
+                          text={meeting.summary.meetingInfo.documenter} 
+                          searchTerm={searchTerm}
+                        />
+                      </p>
                     </div>
                   )}
                   {meeting.summary.meetingInfo.purpose && (
                     <div className={styles.infoItem}>
                       <p className={styles.infoLabel}>Purpose</p>
-                      <p>{meeting.summary.meetingInfo.purpose}</p>
+                      <p>
+                        <HighlightedText 
+                          text={meeting.summary.meetingInfo.purpose} 
+                          searchTerm={searchTerm}
+                        />
+                      </p>
                     </div>
                   )}
                   {meeting.summary.meetingInfo.peoplePresent && (
                     <div className={styles.infoItem}>
                       <p className={styles.infoLabel}>People Present</p>
-                      <p>{meeting.summary.meetingInfo.peoplePresent}</p>
+                      <p>
+                        <HighlightedText 
+                          text={meeting.summary.meetingInfo.peoplePresent} 
+                          searchTerm={searchTerm}
+                        />
+                      </p>
                     </div>
                   )}
                   {meeting.summary.meetingInfo.townHallNumber && (
                     <div className={styles.infoItem}>
                       <p className={styles.infoLabel}>Town Hall Number</p>
-                      <p>{meeting.summary.meetingInfo.townHallNumber}</p>
+                      <p>
+                        <HighlightedText 
+                          text={meeting.summary.meetingInfo.townHallNumber} 
+                          searchTerm={searchTerm}
+                        />
+                      </p>
                     </div>
                   )}
                 </div>
@@ -134,7 +171,10 @@ export default function MeetingDetailsModal({ meeting, isOpen, onClose }: Meetin
                   <h3 className={styles.sectionTitle}>Meeting Recording</h3>
                   {meeting.summary.meetingInfo.timestampedVideo.intro && (
                     <p className={styles.videoIntro}>
-                      {meeting.summary.meetingInfo.timestampedVideo.intro}
+                      <HighlightedText 
+                        text={meeting.summary.meetingInfo.timestampedVideo.intro} 
+                        searchTerm={searchTerm}
+                      />
                     </p>
                   )}
                   {meeting.summary.meetingInfo.timestampedVideo.url && (
@@ -163,7 +203,10 @@ export default function MeetingDetailsModal({ meeting, isOpen, onClose }: Meetin
                               <span className={styles.timestampTime}>{time}</span>
                               {description && remainingText && (
                                 <span className={styles.timestampDescription}>
-                                  {description + remainingText}
+                                  <HighlightedText 
+                                    text={description + remainingText} 
+                                    searchTerm={searchTerm}
+                                  />
                                 </span>
                               )}
                             </div>
@@ -184,7 +227,12 @@ export default function MeetingDetailsModal({ meeting, isOpen, onClose }: Meetin
                       {item.agenda && (
                         <div className={styles.section}>
                           <h4 className={styles.sectionTitle}>Agenda</h4>
-                          <p>{item.agenda}</p>
+                          <p>
+                            <HighlightedText 
+                              text={item.agenda} 
+                              searchTerm={searchTerm}
+                            />
+                          </p>
                         </div>
                       )}
 
@@ -198,18 +246,29 @@ export default function MeetingDetailsModal({ meeting, isOpen, onClose }: Meetin
                               action.text || action.assignee || action.dueDate || (action.status && action.status !== '')
                             ).map((action, idx) => (
                               <li key={idx}>
-                                {action.text}
+                                <HighlightedText 
+                                  text={action.text} 
+                                  searchTerm={searchTerm}
+                                />
                                 {(action.assignee || action.dueDate || action.status) && (
                                   <div className={styles.actionDetails}>
                                     {action.assignee && (
-                                      <span className={styles.assignee}>Assignee: {action.assignee}</span>
+                                      <span className={styles.assignee}>
+                                        Assignee: <HighlightedText 
+                                          text={action.assignee} 
+                                          searchTerm={searchTerm}
+                                        />
+                                      </span>
                                     )}
                                     {action.dueDate && (
                                       <span className={styles.assignee}>Due: {formatDate(action.dueDate)}</span>
                                     )}
                                     {action.status && action.status !== '' && (
                                       <span className={`${styles.statusBadge} ${styles[`status${action.status}`]}`}>
-                                        {action.status}
+                                        <HighlightedText 
+                                          text={action.status} 
+                                          searchTerm={searchTerm}
+                                        />
                                       </span>
                                     )}
                                   </div>
@@ -220,16 +279,22 @@ export default function MeetingDetailsModal({ meeting, isOpen, onClose }: Meetin
                         </div>
                       )}
 
-                      {item.decisionItems && item.decisionItems.length > 0 && (
+{item.decisionItems && item.decisionItems.length > 0 && (
                         <div className={styles.section}>
                           <h4 className={styles.sectionTitle}>Decisions</h4>
                           <ul className={styles.itemList}>
                             {item.decisionItems.map((decision, idx) => (
                               <li key={idx}>
-                                {decision.decision}
+                                <HighlightedText 
+                                  text={decision.decision} 
+                                  searchTerm={searchTerm}
+                                />
                                 {decision.effect && (
                                   <div className={styles.effectText}>
-                                    Effect: {decision.effect}
+                                    Effect: <HighlightedText 
+                                      text={decision.effect} 
+                                      searchTerm={searchTerm}
+                                    />
                                   </div>
                                 )}
                               </li>
@@ -243,7 +308,12 @@ export default function MeetingDetailsModal({ meeting, isOpen, onClose }: Meetin
                           <h4 className={styles.sectionTitle}>Discussion Points</h4>
                           <ul className={styles.itemList}>
                             {item.discussionPoints.map((point, idx) => (
-                              <li key={idx}>{point}</li>
+                              <li key={idx}>
+                                <HighlightedText 
+                                  text={point} 
+                                  searchTerm={searchTerm}
+                                />
+                              </li>
                             ))}
                           </ul>
                         </div>
@@ -252,21 +322,36 @@ export default function MeetingDetailsModal({ meeting, isOpen, onClose }: Meetin
                       {item.narrative && (
                         <div className={styles.section}>
                           <h4 className={styles.sectionTitle}>Summary</h4>
-                          <p>{item.narrative}</p>
+                          <p>
+                            <HighlightedText 
+                              text={item.narrative} 
+                              searchTerm={searchTerm}
+                            />
+                          </p>
                         </div>
                       )}
 
                       {item.townHallUpdates && (
                         <div className={styles.section}>
                           <h4 className={styles.sectionTitle}>Town Hall Updates</h4>
-                          <p>{item.townHallUpdates}</p>
+                          <p>
+                            <HighlightedText 
+                              text={item.townHallUpdates} 
+                              searchTerm={searchTerm}
+                            />
+                          </p>
                         </div>
                       )}
 
                       {(item.townHallSummary && item.townHallSummary.trim() !== '') && (
                         <div className={styles.section}>
                           <h4 className={styles.sectionTitle}>Town Hall Summary</h4>
-                          <p>{item.townHallSummary}</p>
+                          <p>
+                            <HighlightedText 
+                              text={item.townHallSummary} 
+                              searchTerm={searchTerm}
+                            />
+                          </p>
                         </div>
                       )}
 
@@ -275,40 +360,60 @@ export default function MeetingDetailsModal({ meeting, isOpen, onClose }: Meetin
                           <h4 className={styles.sectionTitle}>Meeting Topics</h4>
                           <ul className={styles.itemList}>
                             {item.meetingTopics.map((topic, idx) => (
-                              <li key={idx}>{topic}</li>
+                              <li key={idx}>
+                                <HighlightedText 
+                                  text={topic} 
+                                  searchTerm={searchTerm}
+                                />
+                              </li>
                             ))}
                           </ul>
                         </div>
                       )}
-
+                      
                       {item.issues && item.issues.length > 0 && (
                         <div className={styles.section}>
                           <h4 className={styles.sectionTitle}>Issues</h4>
                           <ul className={styles.itemList}>
                             {item.issues.map((issue, idx) => (
-                              <li key={idx}>{issue}</li>
+                              <li key={idx}>
+                                <HighlightedText 
+                                  text={issue} 
+                                  searchTerm={searchTerm}
+                                />
+                              </li>
                             ))}
                           </ul>
                         </div>
                       )}
-
+                      
                       {item.gameRules && item.gameRules.length > 0 && (
                         <div className={styles.section}>
                           <h4 className={styles.sectionTitle}>Game Rules</h4>
                           <ul className={styles.itemList}>
                             {item.gameRules.map((rule, idx) => (
-                              <li key={idx}>{rule}</li>
+                              <li key={idx}>
+                                <HighlightedText 
+                                  text={rule} 
+                                  searchTerm={searchTerm}
+                                />
+                              </li>
                             ))}
                           </ul>
                         </div>
                       )}
-
+                      
                       {item.learningPoints && item.learningPoints.length > 0 && (
                         <div className={styles.section}>
                           <h4 className={styles.sectionTitle}>Learning Points</h4>
                           <ul className={styles.itemList}>
                             {item.learningPoints.map((point, idx) => (
-                              <li key={idx}>{point}</li>
+                              <li key={idx}>
+                                <HighlightedText 
+                                  text={point} 
+                                  searchTerm={searchTerm}
+                                />
+                              </li>
                             ))}
                           </ul>
                         </div>
@@ -326,19 +431,34 @@ export default function MeetingDetailsModal({ meeting, isOpen, onClose }: Meetin
                     {meeting.summary.tags.topicsCovered && (
                       <div className={styles.infoItem}>
                         <p className={styles.infoLabel}>Topics Covered</p>
-                        <p>{meeting.summary.tags.topicsCovered}</p>
+                        <p>
+                          <HighlightedText 
+                            text={meeting.summary.tags.topicsCovered}
+                            searchTerm={searchTerm}
+                          />
+                        </p>
                       </div>
                     )}
                     {meeting.summary.tags.emotions && (
                       <div className={styles.infoItem}>
                         <p className={styles.infoLabel}>Emotions</p>
-                        <p>{meeting.summary.tags.emotions}</p>
+                        <p>
+                          <HighlightedText 
+                            text={meeting.summary.tags.emotions}
+                            searchTerm={searchTerm}
+                          />
+                        </p>
                       </div>
                     )}
                     {meeting.summary.tags.other && (
                       <div className={styles.infoItem}>
                         <p className={styles.infoLabel}>Other Tags</p>
-                        <p>{meeting.summary.tags.other}</p>
+                        <p>
+                          <HighlightedText 
+                            text={meeting.summary.tags.other}
+                            searchTerm={searchTerm}
+                          />
+                        </p>
                       </div>
                     )}
                   </div>

@@ -16,6 +16,18 @@ export interface ActionItem {
   workgroup_id: string;
 }
 
+export interface TimestampedVideoSection {
+  title?: string;
+  content?: string;
+}
+
+interface TimestampedVideo {
+  intro?: string;
+  url?: string;
+  timestamps?: string;
+  sections?: TimestampedVideoSection[];
+}
+
 export interface MeetingSummary {
   meeting_id: string;
   summary: {
@@ -58,7 +70,7 @@ export interface MeetingSummary {
       transcriptLink: string;
       mediaLink: string;
       workingDocs: any[];
-      timestampedVideo: Record<string, any>;
+      timestampedVideo?: TimestampedVideo;
     };
     tags: {
       topicsCovered: string;
