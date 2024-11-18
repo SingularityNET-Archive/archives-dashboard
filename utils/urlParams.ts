@@ -31,12 +31,12 @@ export const getFilterStateFromUrl = (query: {
   };
 };
 
+// Increased debounce timeout for better typing experience
 export const debouncedUpdateUrl = debounce((
   router: NextRouter,
   query: { [key: string]: string }
 ) => {
   const newQuery = { ...query };
-  // Remove empty string values from URL
   Object.keys(newQuery).forEach(key => {
     if (newQuery[key] === '') {
       delete newQuery[key];
@@ -51,7 +51,7 @@ export const debouncedUpdateUrl = debounce((
     undefined,
     { shallow: true }
   );
-}, 300);
+}, 500); // Increased from 300ms to 500ms
 
 export const updateUrlWithFilters = (
   router: NextRouter,
@@ -60,7 +60,6 @@ export const updateUrlWithFilters = (
 ) => {
   const query: { [key: string]: string } = { tab: activeTab };
   
-  // Only add non-empty filter values to the URL
   if (filters.workgroup) query.workgroup = filters.workgroup;
   if (filters.status) query.status = filters.status;
   if (filters.search) query.search = filters.search;

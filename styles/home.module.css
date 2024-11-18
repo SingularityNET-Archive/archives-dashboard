@@ -1,29 +1,103 @@
 .container {
   display: flex;
   flex-direction: column;
-  margin-top: 4.5em;  /* Leaving space for the top fixed navbar */
-  height: calc(100vh - 4.5em);
-  justify-content: center; /* Centers content vertically */
-  align-items: center;     /* Centers content horizontally */
+  padding: 80px 2rem 2rem; /* Added top padding to account for navbar + some spacing */
+  min-height: calc(100vh - 60px); /* Adjusted to account for navbar height */
+  justify-content: center;
+  align-items: center;
+  max-width: 1024px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 @media (max-width: 600px) {
   .container {
-    display: flex;
-    flex-direction: column;
-    margin-top: 120px;  
-    align-items: center;    
+    padding-top: 100px; /* Increased padding for mobile */
   }
 }
 
-.listItem {
-  margin-bottom: 10px; /* Adjust as needed for desired spacing */
+/* Rest of the styles remain the same */
+.header {
+  text-align: center;
+  margin-bottom: 3rem;
 }
 
-.heading2 {
-  margin-bottom: 1em;
+.title {
+  font-size: 2.5rem;
+  font-weight: bold;
+  margin-bottom: 1rem;
+}
+
+.subtitle {
+  font-size: 1.125rem;
+  color: #666;
+}
+
+.section {
+  background: white;
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid #eee;
+  margin-bottom: 1.5rem;
+  width: 100%;
+}
+
+.sectionTitle {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding-left: 1.5rem;
+  margin-top: 1rem;
+}
+
+.listItem {
+  margin-bottom: 0.75rem;
+  line-height: 1.5;
+}
+
+.filtersGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1rem;
+}
+
+.filterItem {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.filterTitle {
+  font-weight: 600;
+  font-size: 1.125rem;
+  margin-bottom: 0.5rem;
+}
+
+.filterDescription {
+  color: #666;
+  line-height: 1.5;
 }
 
 .link {
   color: rgb(106, 122, 212);
+  text-decoration: none;
+  display: inline-block;
+  margin-top: 1rem;
+}
+
+.link:hover {
+  text-decoration: underline;
+}
+
+.resourcesSection {
+  color: #666;
+  margin-top: 1rem;
 }
