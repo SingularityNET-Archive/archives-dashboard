@@ -25,7 +25,7 @@ const Home: NextPage = () => {
               Use the search bar to find specific content across all records
             </li>
             <li className={styles.listItem}>
-              Click "View Details" on any item to see complete information
+              Click &quot;View Details&quot; on any item to see complete information
             </li>
           </ul>
         </section>
