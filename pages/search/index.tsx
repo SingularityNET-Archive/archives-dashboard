@@ -21,14 +21,14 @@ interface SearchPageProps {
   initialData: MeetingSummary[];
   initialFilters: FilterState;
   initialTab: 'decisions' | 'actions' | 'meetings';
-  error?: string;
+  //error?: string;
 }
 
 export default function SearchPage({ 
   initialData, 
   initialFilters,
   initialTab,
-  error 
+  //error 
 }: SearchPageProps) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'decisions' | 'actions' | 'meetings'>(initialTab);
@@ -95,14 +95,14 @@ export default function SearchPage({
     }, 500);
   };
 
-  if (error) {
+  /*if (error) {
     return (
       <div className={styles.errorContainer}>
         <h2>Error Loading Data</h2>
         <p>{error}</p>
       </div>
     );
-  }
+  }*/
 
   return (
     <MeetingSummariesPageProvider initialData={initialData}>
@@ -246,7 +246,7 @@ export const getServerSideProps: GetServerSideProps<SearchPageProps> = async (co
           effect: ''
         },
         initialTab: 'decisions',
-        error: error instanceof Error ? error.message : 'An error occurred',
+        //error: error instanceof Error ? error.message : 'An error occurred',
       },
     };
   }
