@@ -1,6 +1,5 @@
 // components/filters/EffectFilter.tsx
 import React from 'react';
-import { useMeetingSummaries } from '../../context/MeetingSummariesContext';
 import { formatEffectType } from '../../utils/stringFormatting';
 import styles from '../../styles/WorkgroupFilter.module.css';
 
