@@ -128,6 +128,53 @@ export default function MeetingDetailsModal({ meeting, isOpen, onClose }: Meetin
                 </div>
               )}
 
+              {meeting.summary.meetingInfo.timestampedVideo && 
+                Object.keys(meeting.summary.meetingInfo.timestampedVideo).length > 0 && (
+                <div className={styles.section}>
+                  <h3 className={styles.sectionTitle}>Meeting Recording</h3>
+                  {meeting.summary.meetingInfo.timestampedVideo.intro && (
+                    <p className={styles.videoIntro}>
+                      {meeting.summary.meetingInfo.timestampedVideo.intro}
+                    </p>
+                  )}
+                  {meeting.summary.meetingInfo.timestampedVideo.url && (
+                    <div className={styles.infoItem}>
+                      <p className={styles.infoLabel}>Video Link</p>
+                      <a 
+                        href={meeting.summary.meetingInfo.timestampedVideo.url} 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        className={styles.viewDetailsButton}
+                      >
+                        Watch Video
+                      </a>
+                    </div>
+                  )}
+                  {meeting.summary.meetingInfo.timestampedVideo.timestamps && (
+                    <div className={styles.timestampsContainer}>
+                      <p className={styles.infoLabel}>Timestamps</p>
+                      <div className={styles.timestamps}>
+                        {meeting.summary.meetingInfo.timestampedVideo.timestamps.split('\n').map((timestamp: string, index: number) => {
+                          const [time, description] = timestamp.split(' ', 2);
+                          const remainingText = timestamp.slice(time.length + description?.length + 2 || 0);
+                          
+                          return (
+                            <div key={index} className={styles.timestamp}>
+                              <span className={styles.timestampTime}>{time}</span>
+                              {description && remainingText && (
+                                <span className={styles.timestampDescription}>
+                                  {description + remainingText}
+                                </span>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Agenda Items */}
               {meeting.summary.agendaItems?.length > 0 && (
                 <div className={styles.section}>
@@ -141,11 +188,15 @@ export default function MeetingDetailsModal({ meeting, isOpen, onClose }: Meetin
                         </div>
                       )}
 
-                      {item.actionItems && item.actionItems.length > 0 && (
+                      {item.actionItems && item.actionItems.length > 0 && item.actionItems.some(action => 
+                        action.text || action.assignee || action.dueDate
+                      ) && (
                         <div className={styles.section}>
                           <h4 className={styles.sectionTitle}>Action Items</h4>
                           <ul className={styles.itemList}>
-                            {item.actionItems.map((action, idx) => (
+                            {item.actionItems.filter(action => 
+                              action.text || action.assignee || action.dueDate || (action.status && action.status !== '')
+                            ).map((action, idx) => (
                               <li key={idx}>
                                 {action.text}
                                 {(action.assignee || action.dueDate || action.status) && (
@@ -156,7 +207,7 @@ export default function MeetingDetailsModal({ meeting, isOpen, onClose }: Meetin
                                     {action.dueDate && (
                                       <span className={styles.assignee}>Due: {formatDate(action.dueDate)}</span>
                                     )}
-                                    {action.status && (
+                                    {action.status && action.status !== '' && (
                                       <span className={`${styles.statusBadge} ${styles[`status${action.status}`]}`}>
                                         {action.status}
                                       </span>
@@ -212,7 +263,7 @@ export default function MeetingDetailsModal({ meeting, isOpen, onClose }: Meetin
                         </div>
                       )}
 
-                      {item.townHallSummary && (
+                      {(item.townHallSummary && item.townHallSummary.trim() !== '') && (
                         <div className={styles.section}>
                           <h4 className={styles.sectionTitle}>Town Hall Summary</h4>
                           <p>{item.townHallSummary}</p>

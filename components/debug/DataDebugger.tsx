@@ -1,6 +1,6 @@
 // src/components/debug/DataDebugger.tsx
 import { useMeetingSummaries } from '../../context/MeetingSummariesContext';
-import { useEffect } from 'react';
+import { useEffect, useRef, memo } from 'react';
 import { Decision, ActionItem } from '../../types/meetings';
 
 interface DataDebuggerProps {
@@ -30,24 +30,40 @@ const isValidActionItem = (item: Partial<ActionItem>): item is ActionItem => {
   );
 };
 
-const DataDebugger = ({ filters }: DataDebuggerProps) => {
+const DataDebugger = memo(({ filters }: DataDebuggerProps) => {
   const { getDecisions, getActionItems, summaries } = useMeetingSummaries();
+  const previousFiltersRef = useRef<string>('');
+  const previousSummariesRef = useRef<string>('');
   
   useEffect(() => {
-    // Log raw summaries data
-    console.group('Raw Meeting Summaries Data');
-    console.log('All summaries:', summaries);
+    // Convert current values to strings for comparison
+    const currentFiltersString = JSON.stringify(filters);
+    const currentSummariesString = JSON.stringify(summaries);
+
+    // Check if either filters or summaries have actually changed
+    if (
+      previousFiltersRef.current === currentFiltersString && 
+      previousSummariesRef.current === currentSummariesString
+    ) {
+      return;
+    }
+
+    // Update refs with current values
+    previousFiltersRef.current = currentFiltersString;
+    previousSummariesRef.current = currentSummariesString;
+
+    // Perform logging
+    console.group('Data Debugger Output');
+    
+    console.group('Raw Data');
+    console.log('Current Filters:', filters);
+    console.log('All Summaries:', summaries);
     console.groupEnd();
 
-    // Log processed data
     console.group('Processed Data');
     const decisions = getDecisions();
     const actionItems = getActionItems();
     
-    console.log('All Decisions:', decisions);
-    console.log('All Action Items:', actionItems);
-    
-    // Log filtered data
     const filteredDecisions = decisions.filter(decision => {
       if (!isValidDecision(decision)) {
         return false;
@@ -81,12 +97,19 @@ const DataDebugger = ({ filters }: DataDebuggerProps) => {
       return matchesWorkgroup && matchesStatus && matchesSearch;
     });
 
+    console.log('All Decisions:', decisions);
     console.log('Filtered Decisions:', filteredDecisions);
+    console.log('All Action Items:', actionItems);
     console.log('Filtered Action Items:', filteredActionItems);
     console.groupEnd();
-  }, [summaries, filters, getDecisions, getActionItems]);
 
+    console.groupEnd();
+  }, [filters, summaries, getDecisions, getActionItems]);
+
+  // Component doesn't render anything
   return null;
-};
+});
+
+DataDebugger.displayName = 'DataDebugger';
 
 export default DataDebugger;

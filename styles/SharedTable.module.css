@@ -305,3 +305,44 @@
       grid-template-columns: 1fr;
   }
 }
+
+.videoIntro {
+  margin-bottom: 1rem;
+  color: #374151;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.timestampsContainer {
+  margin-top: 1rem;
+  padding: 1rem;
+  background-color: #f9fafb;
+  border-radius: 0.5rem;
+  border: 1px solid #e5e7eb;
+}
+
+.timestamps {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.timestamp {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.timestampTime {
+  flex-shrink: 0;
+  color: #2563eb;
+  font-family: monospace;
+  font-weight: 500;
+  min-width: 5rem;
+}
+
+.timestampDescription {
+  color: #374151;
+}
