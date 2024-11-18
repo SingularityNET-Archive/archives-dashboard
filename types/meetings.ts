@@ -22,6 +22,7 @@ export interface MeetingSummary {
     workgroup: string; 
     workgroup_id: string;
     agendaItems: Array<{
+      agenda?: string;
       actionItems?: Array<{
         text: string;
         assignee: string;
@@ -77,6 +78,8 @@ export interface FilterState {
   workgroup: string;
   status: string;
   search: string;
-  date: string; 
+  date: string;
   dateRange: { start: string; end: string };
+  assignee: string;
+  effect: string;
 }

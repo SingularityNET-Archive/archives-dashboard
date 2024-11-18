@@ -6,6 +6,8 @@ import SearchBar from '../../components/filters/SearchBar';
 import WorkgroupFilter from '../../components/filters/WorkgroupFilter';
 import StatusFilter from '../../components/filters/StatusFilter';
 import DateFilter from '../../components/filters/DateFilter';
+import AssigneeFilter from '../../components/filters/AssigneeFilter';
+import EffectFilter from '../../components/filters/EffectFilter';
 import DecisionsTable from '../../components/tables/DecisionsTable';
 import ActionItemsTable from '../../components/tables/ActionItemsTable';
 import MeetingsTable from '../../components/tables/MeetingsTable';
@@ -24,7 +26,9 @@ export default function SearchPage({ initialData }: SearchPageProps) {
     status: '',
     search: '',
     date: '', 
-    dateRange: { start: '', end: '' }
+    dateRange: { start: '', end: '' },
+    assignee: '',
+    effect: ''
   });
 
   const handleTabChange = (tab: 'decisions' | 'actions' | 'meetings') => {
@@ -41,7 +45,13 @@ export default function SearchPage({ initialData }: SearchPageProps) {
           <SearchBar 
             value={filters.search} 
             onChange={(value) => setFilters(prev => ({ ...prev, search: value }))}
-            placeholder={`Search ${activeTab === 'decisions' ? 'decisions' : 'action items'}...`}
+            placeholder={`Search ${
+              activeTab === 'decisions' 
+                ? 'decisions' 
+                : activeTab === 'actions' 
+                  ? 'action items'
+                  : 'meetings'
+            }...`}
           />
           <div className={styles.filterGroup}>
             <WorkgroupFilter 
@@ -52,11 +62,23 @@ export default function SearchPage({ initialData }: SearchPageProps) {
               value={filters.date}
               onChange={(value) => setFilters(prev => ({ ...prev, date: value }))}
             />
-            {activeTab === 'actions' && (
-              <StatusFilter 
-                value={filters.status}
-                onChange={(value) => setFilters(prev => ({ ...prev, status: value }))}
+            {activeTab === 'decisions' && (
+              <EffectFilter 
+                value={filters.effect}
+                onChange={(value) => setFilters(prev => ({ ...prev, effect: value }))}
               />
+            )}
+            {activeTab === 'actions' && (
+              <>
+                <StatusFilter 
+                  value={filters.status}
+                  onChange={(value) => setFilters(prev => ({ ...prev, status: value }))}
+                />
+                <AssigneeFilter 
+                  value={filters.assignee}
+                  onChange={(value) => setFilters(prev => ({ ...prev, assignee: value }))}
+                />
+              </>
             )}
           </div>
         </div>

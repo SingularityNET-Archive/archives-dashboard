@@ -2,7 +2,8 @@ import { formatDate } from '../../utils/dateFormatting';
 import { useMeetingSummaries } from '../../context/MeetingSummariesContext';
 import { FilterState, MeetingSummary } from '../../types/meetings';
 import HighlightedText from '../common/HighlightedText';
-import Link from 'next/link';
+import MeetingDetailsModal from '../modals/MeetingDetailsModal';
+import { useState } from 'react';
 import styles from '../../styles/SharedTable.module.css';
 
 interface MeetingsTableProps {
@@ -12,6 +13,8 @@ interface MeetingsTableProps {
 
 export default function MeetingsTable({ filters }: MeetingsTableProps) {
   const { summaries, loading } = useMeetingSummaries();
+  const [selectedMeeting, setSelectedMeeting] = useState<MeetingSummary | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   
   const filteredMeetings = summaries.filter(meeting => {
     const searchTerm = filters.search?.toLowerCase() || '';
@@ -19,7 +22,6 @@ export default function MeetingsTable({ filters }: MeetingsTableProps) {
     const matchesDate = !filters.date || 
       (meeting.summary.meetingInfo.date && meeting.summary.meetingInfo.date === filters.date);
 
-    // Search through all relevant text fields
     const searchableContent = [
         meeting.summary.workgroup,
         meeting.summary.meetingInfo.purpose,
@@ -52,66 +54,82 @@ export default function MeetingsTable({ filters }: MeetingsTableProps) {
     return stats;
   };
 
+  const handleMeetingClick = (meeting: MeetingSummary) => {
+    setSelectedMeeting(meeting);
+    setIsModalOpen(true);
+  };
+
   if (loading) return <div>Loading...</div>;
 
   return (
-    <div className={styles.tableContainer}>
-      <table className={styles.table}>
-        <thead>
-          <tr>
-            <th className={styles.dateColumn}>Date</th>
-            <th className={styles.standardColumn}>Workgroup</th>
-            <th className={styles.standardColumn}>Meeting Name</th>
-            <th className={styles.metricsColumn}>Content Overview</th>
-            <th className={styles.actionColumn}>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {filteredMeetings.map((meeting) => {
-            const stats = getMeetingStats(meeting);
-            return (
-              <tr key={meeting.meeting_id}>
-                <td className={styles.dateCell}>
-                  {formatDate(meeting.summary.meetingInfo.date)}
-                </td>
-                <td>
-                  <HighlightedText 
-                    text={meeting.summary.workgroup} 
-                    searchTerm={filters.search}
-                  />
-                </td>
-                <td>
-                  <HighlightedText 
-                    text={meeting.summary.meetingInfo.name} 
-                    searchTerm={filters.search}
-                  />
-                </td>
-                <td>
-                  <div className={styles.meetingStats}>
-                    <span>{stats.actionItems} Action Items</span>
-                    <span>{stats.decisions} Decisions</span>
-                  </div>
-                </td>
-                <td>
-                  <Link 
-                    href={`/meetings/${meeting.meeting_id}`}
-                    className={styles.viewDetailsLink}
-                  >
-                    View Details
-                  </Link>
+    <>
+      <div className={styles.tableContainer}>
+        <table className={styles.table}>
+          <thead>
+            <tr>
+              <th className={styles.dateColumn}>Date</th>
+              <th className={styles.standardColumn}>Workgroup</th>
+              <th className={styles.standardColumn}>Meeting Name</th>
+              <th className={styles.metricsColumn}>Content Overview</th>
+              <th className={styles.actionColumn}>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredMeetings.map((meeting) => {
+              const stats = getMeetingStats(meeting);
+              return (
+                <tr key={meeting.meeting_id}>
+                  <td className={styles.dateCell}>
+                    {formatDate(meeting.summary.meetingInfo.date)}
+                  </td>
+                  <td>
+                    <HighlightedText 
+                      text={meeting.summary.workgroup} 
+                      searchTerm={filters.search}
+                    />
+                  </td>
+                  <td>
+                    <HighlightedText 
+                      text={meeting.summary.meetingInfo.name} 
+                      searchTerm={filters.search}
+                    />
+                  </td>
+                  <td>
+                    <div className={styles.meetingStats}>
+                      <span>{stats.actionItems} Action Items</span>
+                      <span>{stats.decisions} Decisions</span>
+                    </div>
+                  </td>
+                  <td>
+                    <button 
+                      onClick={() => handleMeetingClick(meeting)}
+                      className={styles.viewDetailsLink}
+                    >
+                      View Details
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
+            {filteredMeetings.length === 0 && (
+              <tr>
+                <td colSpan={5} className={styles.noResults}>
+                  No meetings found
                 </td>
               </tr>
-            );
-          })}
-          {filteredMeetings.length === 0 && (
-            <tr>
-              <td colSpan={5} className={styles.noResults}>
-                No meetings found
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
-    </div>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      <MeetingDetailsModal
+        meeting={selectedMeeting}
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          setSelectedMeeting(null);
+        }}
+      />
+    </>
   );
 }
