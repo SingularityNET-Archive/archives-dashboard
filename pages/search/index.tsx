@@ -1,6 +1,6 @@
 // pages/search/index.tsx
 import { GetServerSideProps } from 'next';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/router';
 import { MeetingSummary, FilterState } from '../../types/meetings';
 import SearchBar from '../../components/filters/SearchBar';
@@ -35,6 +35,14 @@ export default function SearchPage({
   const [filters, setFilters] = useState<FilterState>(initialFilters);
   const [isInitialized, setIsInitialized] = useState(false);
   const isUserAction = React.useRef(false);
+  const lastUserActionTimestamp = React.useRef<number>(Date.now());
+
+  // Memoized filter update handler
+  const handleFilterChange = useCallback((updates: Partial<FilterState>) => {
+    isUserAction.current = true;
+    lastUserActionTimestamp.current = Date.now();
+    setFilters(prev => ({ ...prev, ...updates }));
+  }, []);
 
   // Handle URL updates when filters or tab changes
   useEffect(() => {
@@ -51,7 +59,9 @@ export default function SearchPage({
   // Handle browser back/forward navigation
   useEffect(() => {
     const handleRouteChange = (url: string) => {
-      if (!isUserAction.current && url !== router.asPath) {
+      // Ignore route changes that happen immediately after user actions
+      const timeSinceLastUserAction = Date.now() - lastUserActionTimestamp.current;
+      if (!isUserAction.current && timeSinceLastUserAction > 500) {
         const newFilters = getFilterStateFromUrl(router.query);
         const newTab = (router.query.tab as 'decisions' | 'actions' | 'meetings') || 'decisions';
         
@@ -68,6 +78,7 @@ export default function SearchPage({
 
   const handleTabChange = (tab: 'decisions' | 'actions' | 'meetings') => {
     isUserAction.current = true;
+    lastUserActionTimestamp.current = Date.now();
     setActiveTab(tab);
     setFilters(prev => ({ 
       ...prev, 
@@ -79,14 +90,6 @@ export default function SearchPage({
       date: prev.date,
       dateRange: prev.dateRange
     }));
-    setTimeout(() => {
-      isUserAction.current = false;
-    }, 500);
-  };
-
-  const handleFilterChange = (updates: Partial<FilterState>) => {
-    isUserAction.current = true;
-    setFilters(prev => ({ ...prev, ...updates }));
     setTimeout(() => {
       isUserAction.current = false;
     }, 500);
