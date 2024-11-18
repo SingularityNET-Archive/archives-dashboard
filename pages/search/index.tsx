@@ -92,6 +92,15 @@ export default function SearchPage({
     }, 500);
   };
 
+  if (error) {
+    return (
+      <div className={styles.errorContainer}>
+        <h2>Error Loading Data</h2>
+        <p>{error}</p>
+      </div>
+    );
+  }
+
   return (
     <MeetingSummariesPageProvider initialData={initialData}>
       <div className={styles.searchPage}>
