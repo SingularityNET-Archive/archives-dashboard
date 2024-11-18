@@ -71,7 +71,7 @@ export default function MeetingsTable({ filters }: MeetingsTableProps) {
               <th className={styles.standardColumn}>Workgroup</th>
               <th className={styles.standardColumn}>Meeting Name</th>
               <th className={styles.metricsColumn}>Content Overview</th>
-              <th className={styles.actionColumn}>Actions</th>
+              <th className={styles.actionColumn}>View Details</th>
             </tr>
           </thead>
           <tbody>
