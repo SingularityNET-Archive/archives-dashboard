@@ -72,11 +72,6 @@ export default function StatusFilter({
       });
   }, [getActionItems]);
 
-  const selectedOption = useMemo(() => 
-    statusOptions.find(option => option.value === value),
-    [statusOptions, value]
-  );
-
   if (loading) {
     return (
       <div className={`${styles.filterContainer} ${className}`}>
@@ -104,8 +99,6 @@ export default function StatusFilter({
       </div>
     );
   }
-
-  const totalItems = statusOptions.reduce((sum, option) => sum + option.count, 0);
 
   return (
     <div className={`${styles.filterContainer} ${className}`}>
@@ -135,11 +128,6 @@ export default function StatusFilter({
           </option>
         ))}
       </select>
-      {selectedOption && (
-        <div className={styles.selectionInfo} aria-live="polite">
-          Showing {selectedOption.count} items with status "{selectedOption.label}"
-        </div>
-      )}
     </div>
   );
 }

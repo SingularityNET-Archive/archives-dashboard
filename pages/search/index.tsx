@@ -19,7 +19,7 @@ import styles from '../../styles/search.module.css';
 
 export default function SearchPage() {
   const router = useRouter();
-  const { summaries, loading } = useGlobalMeetingSummaries();
+  const { loading } = useGlobalMeetingSummaries();
   
   // Initialize state based on URL parameters
   const [activeTab, setActiveTab] = useState<'meetings' | 'actions' | 'decisions'>(

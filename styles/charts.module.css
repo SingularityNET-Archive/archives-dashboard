@@ -1,0 +1,82 @@
+/* styles/charts.module.css */
+.chartsContainer {
+  padding: 2rem;
+  max-width: 1400px;
+  margin-top: 40px; 
+  width: 100%;
+}
+
+.chartsHeader {
+  margin-bottom: -2rem;
+}
+
+.chartsHeader h1 {
+  font-size: 2rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-bottom: 0.5rem;
+}
+
+.chartsMeta {
+  display: flex;
+  gap: 2rem;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.chartsContent {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  padding: 1.5rem;
+}
+
+.loadingContainer,
+.errorContainer,
+.emptyContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+  width: 100%;
+}
+
+.loadingSpinner {
+  color: #666;
+  font-size: 1.1rem;
+}
+
+.errorContainer,
+.emptyContainer {
+  text-align: center;
+  padding: 2rem;
+}
+
+.errorMessage,
+.emptyMessage {
+  max-width: 500px;
+}
+
+.errorMessage h2,
+.emptyMessage h2 {
+  font-size: 1.5rem;
+  color: #1a1a1a;
+  margin-bottom: 1rem;
+}
+
+.errorMessage p,
+.emptyMessage p {
+  color: #666;
+  line-height: 1.5;
+  margin-bottom: 0.5rem;
+}
+
+.errorDetails {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: #fff1f0;
+  border-radius: 4px;
+  color: #cf1322;
+  font-family: monospace;
+  font-size: 0.9rem;
+}
