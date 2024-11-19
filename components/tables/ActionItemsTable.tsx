@@ -65,16 +65,25 @@ export default function ActionItemsTable({ filters }: ActionItemsTableProps) {
       <table className={styles.table}>
         <thead>
           <tr>
+            <th className={styles.dateColumn}>Due Date</th>
+            <th className={styles.standardColumn}>Workgroup</th>
             <th className={styles.textColumn}>Action Item</th>
             <th className={styles.standardColumn}>Assignee</th>
-            <th className={styles.dateColumn}>Due Date</th>
             <th className={styles.statusColumn}>Status</th>
-            <th className={styles.standardColumn}>Workgroup</th>
           </tr>
         </thead>
         <tbody>
           {actionItems.map((item, index) => (
             <tr key={`${item.workgroup_id}-${index}`}>
+              <td className={styles.dateCell}>
+                {item.dueDate ? formatDate(item.dueDate) : 'No date set'}
+              </td>
+              <td>
+                <HighlightedText 
+                  text={item.workgroup || 'Unknown'} 
+                  searchTerm={filters.search}
+                />
+              </td>
               <td>
                 <HighlightedText 
                   text={item.text} 
@@ -87,19 +96,10 @@ export default function ActionItemsTable({ filters }: ActionItemsTableProps) {
                   searchTerm={filters.search}
                 />
               </td>
-              <td className={styles.dateCell}>
-                {item.dueDate ? formatDate(item.dueDate) : 'No date set'}
-              </td>
               <td>
                 <span className={`${styles.statusBadge} ${styles[`status${item.status.replace(/\b\w/g, char => char.toUpperCase()).replace(/\s+/g, '')}`]}`}>
                   {item.status}
                 </span>
-              </td>
-              <td>
-                <HighlightedText 
-                  text={item.workgroup || 'Unknown'} 
-                  searchTerm={filters.search}
-                />
               </td>
             </tr>
           ))}

@@ -2,6 +2,7 @@
 export interface Decision {
   decision: string;
   effect?: string;
+  rationale?: string;  // Add this line
   workgroup: string;
   workgroup_id: string;
   date: string;
@@ -44,6 +45,7 @@ export interface MeetingSummary {
       decisionItems?: Array<{
         decision: string;
         effect: string;
+        rationale?: string;
       }>;
       discussionPoints?: string[];
       narrative: string;
