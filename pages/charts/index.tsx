@@ -41,7 +41,6 @@ export default function ChartPage() {
   return (
     <div className={styles.chartsContainer}>
       <header className={styles.chartsHeader}>
-        <h1>Analytics Dashboard</h1>
         <div className={styles.chartsMeta}>
           <span>Total Meetings: {summaries.length}</span>
           <span>Last Updated: {new Date(Math.max(...summaries.map(s => new Date(s.updated_at).getTime()))).toLocaleDateString()}</span>

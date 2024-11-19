@@ -118,9 +118,6 @@ export default function AssigneeFilter({
     );
   }
 
-  const totalItems = assigneeOptions.reduce((sum, option) => sum + option.count, 0);
-  const totalAssignees = assigneeOptions.length;
-
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newValue = e.target.value;
     // Find the option to get the proper casing if needed

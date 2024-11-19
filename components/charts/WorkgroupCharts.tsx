@@ -1,7 +1,7 @@
 // components/charts/WorkgroupCharts.tsx
-import React, { useRef, useEffect, useMemo } from 'react';
+import React, { useRef, useEffect, useMemo, useCallback } from 'react';
 import Chart from 'chart.js/auto';
-import { ChartConfiguration } from 'chart.js';
+import { ChartConfiguration, TooltipItem } from 'chart.js';
 import { useGlobalMeetingSummaries } from '../../context/GlobalMeetingSummariesContext';
 import styles from '../../styles/charts/WorkgroupCharts.module.css';
 
@@ -57,10 +57,10 @@ const WorkgroupCharts: React.FC = () => {
   }, []);
 
   // Helper function to check if a date is in a specific month
-  const isInMonth = (dateStr: string, month: number, year: number) => {
+  const isInMonth = useCallback((dateStr: string, month: number, year: number): boolean => {
     const date = new Date(dateStr);
     return date.getMonth() === month && date.getFullYear() === year;
-  };
+  }, []);
 
   // Get all unique workgroups
   const workgroups = useMemo(() => 
@@ -93,19 +93,21 @@ const WorkgroupCharts: React.FC = () => {
     const currentMonthActions = workgroups.map(workgroup => 
       actionItems.filter(a => 
         a.workgroup === workgroup && 
-        isInMonth(a.dueDate || '', dates.currentMonth, dates.currentYear)
+        a.dueDate && // Add null check for dueDate
+        isInMonth(a.dueDate, dates.currentMonth, dates.currentYear)
       ).length
     );
     const lastMonthActions = workgroups.map(workgroup => 
       actionItems.filter(a => 
         a.workgroup === workgroup && 
-        isInMonth(a.dueDate || '', dates.lastMonth, dates.lastMonthYear)
+        a.dueDate && // Add null check for dueDate
+        isInMonth(a.dueDate, dates.lastMonth, dates.lastMonthYear)
       ).length
     );
     return { currentMonthActions, lastMonthActions };
   }, [workgroups, getActionItems, dates, isInMonth]);
 
-  const chartOptions = {
+  const chartOptions = useMemo(() => ({
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
@@ -114,8 +116,8 @@ const WorkgroupCharts: React.FC = () => {
       },
       tooltip: {
         callbacks: {
-          title: (context: any) => workgroups[context[0].dataIndex],
-          label: (context: any) => {
+          title: (context: TooltipItem<'bar'>[]) => workgroups[context[0].dataIndex],
+          label: (context: TooltipItem<'bar'>) => {
             const value = context.parsed.y || 0;
             return `${context.dataset.label}: ${value} ${value === 1 ? 'item' : 'items'}`;
           }
@@ -130,7 +132,7 @@ const WorkgroupCharts: React.FC = () => {
         }
       }
     }
-  };
+  }), [workgroups]);
 
   const decisionsConfig: ChartConfiguration<'bar'> = {
     type: 'bar',
@@ -176,12 +178,27 @@ const WorkgroupCharts: React.FC = () => {
   useChart(decisionsChartRef, decisionsConfig);
   useChart(actionsChartRef, actionsConfig);
 
+  const getTotalItems = useCallback((data: number[]) => 
+    data.reduce((sum, count) => sum + count, 0),
+    []
+  );
+
+  const decisionsTotals = useMemo(() => ({
+    current: getTotalItems(decisionData.currentMonthDecisions),
+    last: getTotalItems(decisionData.lastMonthDecisions)
+  }), [decisionData, getTotalItems]);
+
+  const actionsTotals = useMemo(() => ({
+    current: getTotalItems(actionData.currentMonthActions),
+    last: getTotalItems(actionData.lastMonthActions)
+  }), [actionData, getTotalItems]);
+
   return (
     <div className={styles.chartsGrid}>
       <div className={styles.chartContainer}>
         <h2>Decisions by Workgroup</h2>
         <div className={styles.chartMeta}>
-          <span>Comparing {dates.monthNames.current} vs {dates.monthNames.last}</span>
+          <span>Comparing {dates.monthNames.current} ({decisionsTotals.current}) vs {dates.monthNames.last} ({decisionsTotals.last})</span>
         </div>
         <div className={styles.chart}>
           <canvas ref={decisionsChartRef} />
@@ -190,7 +207,7 @@ const WorkgroupCharts: React.FC = () => {
       <div className={styles.chartContainer}>
         <h2>Action Items by Workgroup</h2>
         <div className={styles.chartMeta}>
-          <span>Comparing {dates.monthNames.current} vs {dates.monthNames.last}</span>
+          <span>Comparing {dates.monthNames.current} ({actionsTotals.current}) vs {dates.monthNames.last} ({actionsTotals.last})</span>
         </div>
         <div className={styles.chart}>
           <canvas ref={actionsChartRef} />
@@ -200,4 +217,4 @@ const WorkgroupCharts: React.FC = () => {
   );
 };
 
-export default WorkgroupCharts;
+export default React.memo(WorkgroupCharts);
