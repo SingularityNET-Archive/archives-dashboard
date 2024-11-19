@@ -26,6 +26,11 @@ export default function DecisionsTable({ filters }: DecisionsTableProps) {
       decision.effect === filters.effect;
    
     return matchesWorkgroup && matchesSearch && matchesDate && matchesEffect;
+  }).sort((a, b) => {
+    // Sort by date in descending order
+    const dateA = new Date(a.date).getTime();
+    const dateB = new Date(b.date).getTime();
+    return dateB - dateA;
   });
 
   if (loading) return <div>Loading...</div>;

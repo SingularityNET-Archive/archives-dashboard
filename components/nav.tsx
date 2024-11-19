@@ -19,11 +19,14 @@ const Nav = () => {
   return (
     <nav className={styles.routes}>
       <div className={styles.navLeft}>
-        <Link href="/" className={styles.navitems}>
-          Home
-        </Link>
+          <Link href="/" className={styles.navitems}>
+            Home
+          </Link>
           <Link href='/search' className={styles.navitems}>
             Search
+          </Link>
+          <Link href="/charts" className={styles.navitems}>
+            Charts
           </Link>
       </div>
       <div>{latestTag}</div>

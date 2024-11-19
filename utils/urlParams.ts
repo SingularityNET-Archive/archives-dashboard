@@ -69,5 +69,17 @@ export const updateUrlWithFilters = (
   if (filters.assignee) query.assignee = filters.assignee;
   if (filters.effect) query.effect = filters.effect;
 
-  debouncedUpdateUrl(router, query);
+  // Remove debouncing for tab changes to ensure immediate updates
+  if (router.query.tab !== activeTab) {
+    router.push(
+      {
+        pathname: router.pathname,
+        query: query
+      },
+      undefined,
+      { shallow: true }
+    );
+  } else {
+    debouncedUpdateUrl(router, query);
+  }
 };
