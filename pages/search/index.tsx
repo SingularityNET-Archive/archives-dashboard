@@ -1,6 +1,6 @@
 // pages/search/index.tsx
 import { GetServerSideProps } from 'next';
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/router';
 import { MeetingSummary, FilterState } from '../../types/meetings';
 import SearchBar from '../../components/filters/SearchBar';
@@ -13,6 +13,7 @@ import DecisionsTable from '../../components/tables/DecisionsTable';
 import ActionItemsTable from '../../components/tables/ActionItemsTable';
 import MeetingsTable from '../../components/tables/MeetingsTable';
 import DataDebugger from '../../components/debug/DataDebugger';
+import HowToModal from '../../components/modals/HowToModal';
 import { MeetingSummariesPageProvider } from '../../components/providers/MeetingSummariesPageProvider';
 import { getFilterStateFromUrl, updateUrlWithFilters } from '../../utils/urlParams';
 import styles from '../../styles/search.module.css';
@@ -28,14 +29,14 @@ export default function SearchPage({
   initialData, 
   initialFilters,
   initialTab,
-  //error 
 }: SearchPageProps) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'decisions' | 'actions' | 'meetings'>(initialTab);
   const [filters, setFilters] = useState<FilterState>(initialFilters);
   const [isInitialized, setIsInitialized] = useState(false);
-  const isUserAction = React.useRef(false);
-  const lastUserActionTimestamp = React.useRef<number>(Date.now());
+  const isUserAction = useRef(false);
+  const lastUserActionTimestamp = useRef<number>(Date.now());
+  const pendingTabChange = useRef<string | null>(null);
 
   // Memoized filter update handler
   const handleFilterChange = useCallback((updates: Partial<FilterState>) => {
@@ -52,14 +53,15 @@ export default function SearchPage({
     }
 
     if (isUserAction.current) {
-      updateUrlWithFilters(router, filters, activeTab);
+      const currentTab = pendingTabChange.current || activeTab;
+      updateUrlWithFilters(router, filters, currentTab);
+      pendingTabChange.current = null;
     }
   }, [filters, activeTab, router, isInitialized]);
 
   // Handle browser back/forward navigation
   useEffect(() => {
     const handleRouteChange = () => {
-      // Ignore route changes that happen immediately after user actions
       const timeSinceLastUserAction = Date.now() - lastUserActionTimestamp.current;
       if (!isUserAction.current && timeSinceLastUserAction > 500) {
         const newFilters = getFilterStateFromUrl(router.query);
@@ -68,6 +70,7 @@ export default function SearchPage({
         setFilters(newFilters);
         setActiveTab(newTab);
       }
+      isUserAction.current = false;
     };
 
     router.events.on('routeChangeComplete', handleRouteChange);
@@ -77,8 +80,12 @@ export default function SearchPage({
   }, [router]);
 
   const handleTabChange = (tab: 'decisions' | 'actions' | 'meetings') => {
+    if (tab === activeTab) return;
+    
     isUserAction.current = true;
     lastUserActionTimestamp.current = Date.now();
+    pendingTabChange.current = tab;
+    
     setActiveTab(tab);
     setFilters(prev => ({ 
       ...prev, 
@@ -90,9 +97,6 @@ export default function SearchPage({
       date: prev.date,
       dateRange: prev.dateRange
     }));
-    setTimeout(() => {
-      isUserAction.current = false;
-    }, 500);
   };
 
   /*if (error) {
@@ -112,17 +116,20 @@ export default function SearchPage({
         )}
         
         <div className={styles.filtersSection}>
-          <SearchBar 
-            value={filters.search} 
-            onChange={(value) => handleFilterChange({ search: value })}
-            placeholder={`Search ${
-              activeTab === 'decisions' 
-                ? 'decisions' 
-                : activeTab === 'actions' 
-                  ? 'action items'
-                  : 'meetings'
-            }...`}
-          />
+          <div className={styles.filterControls}>
+            <SearchBar 
+              value={filters.search} 
+              onChange={(value) => handleFilterChange({ search: value })}
+              placeholder={`Search ${
+                activeTab === 'decisions' 
+                  ? 'decisions' 
+                  : activeTab === 'actions' 
+                    ? 'action items'
+                    : 'meetings'
+              }...`}
+            />
+            <HowToModal /> {/* Add the modal here */}
+          </div>
           <div className={styles.filterGroup}>
             <WorkgroupFilter 
               value={filters.workgroup}

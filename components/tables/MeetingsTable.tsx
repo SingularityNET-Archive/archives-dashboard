@@ -127,6 +127,11 @@ export default function MeetingsTable({ filters }: MeetingsTableProps) {
     const matchesSearch = !searchTerm || searchableContent.includes(searchTerm);
 
     return matchesWorkgroup && matchesDate && matchesSearch;
+  }).sort((a, b) => {
+    // Sort by date in descending order
+    const dateA = new Date(a.summary.meetingInfo.date).getTime();
+    const dateB = new Date(b.summary.meetingInfo.date).getTime();
+    return dateB - dateA;
   });
 
   // Rest of the component remains the same...

@@ -50,6 +50,12 @@ export default function ActionItemsTable({ filters }: ActionItemsTableProps) {
        .includes(filters.assignee));
     
     return matchesWorkgroup && matchesStatus && matchesSearch && matchesDate && matchesAssignee;
+  }).sort((a, b) => {
+    // Sort by due date in descending order
+    // If no due date, treat as oldest
+    const dateA = a.dueDate ? new Date(a.dueDate).getTime() : 0;
+    const dateB = b.dueDate ? new Date(b.dueDate).getTime() : 0;
+    return dateB - dateA;
   });
   
   if (loading) return <div>Loading...</div>;

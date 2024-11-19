@@ -53,3 +53,9 @@
   margin: 2rem auto;
   max-width: 600px;
 }
+
+.filterControls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
