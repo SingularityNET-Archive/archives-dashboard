@@ -1,0 +1,46 @@
+/* styles/charts/WorkgroupCharts.module.css */
+.chartsGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  padding: 1rem;
+  width: 100%;
+  max-width: 1200px;  /* Increased max-width */
+  margin: 0 auto;     /* Center the grid */
+}
+
+.chartContainer {
+  background: white;
+  border-radius: 8px;
+  padding: 1.5rem;    /* Increased padding */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  width: 100%;
+}
+
+.chartContainer h2 {
+  text-align: center;
+  margin-bottom: 1.5rem;  /* Increased margin */
+  color: #333;
+  font-size: 1.2rem;
+}
+
+.chart {
+  height: 400px;
+  position: relative;
+  margin: 0 auto;     /* Center the chart */
+}
+
+/* Adjust height for mobile devices */
+@media (max-width: 768px) {
+  .chartsGrid {
+    padding: 0.5rem;
+  }
+  
+  .chartContainer {
+    padding: 1rem;
+  }
+  
+  .chart {
+    height: 300px;
+  }
+}
