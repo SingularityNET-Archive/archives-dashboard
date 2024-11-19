@@ -1,8 +1,8 @@
 // pages/search/index.tsx
-import { GetServerSideProps } from 'next';
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/router';
-import { MeetingSummary, FilterState } from '../../types/meetings';
+import { FilterState } from '../../types/meetings';
+import { useGlobalMeetingSummaries } from '../../context/GlobalMeetingSummariesContext';
 import SearchBar from '../../components/filters/SearchBar';
 import WorkgroupFilter from '../../components/filters/WorkgroupFilter';
 import StatusFilter from '../../components/filters/StatusFilter';
@@ -14,26 +14,21 @@ import ActionItemsTable from '../../components/tables/ActionItemsTable';
 import MeetingsTable from '../../components/tables/MeetingsTable';
 import DataDebugger from '../../components/debug/DataDebugger';
 import HowToModal from '../../components/modals/HowToModal';
-import { MeetingSummariesPageProvider } from '../../components/providers/MeetingSummariesPageProvider';
 import { getFilterStateFromUrl, updateUrlWithFilters } from '../../utils/urlParams';
 import styles from '../../styles/search.module.css';
 
-interface SearchPageProps {
-  initialData: MeetingSummary[];
-  initialFilters: FilterState;
-  initialTab: 'decisions' | 'actions' | 'meetings';
-  //error?: string;
-}
-
-export default function SearchPage({ 
-  initialData, 
-  initialFilters,
-  initialTab,
-}: SearchPageProps) {
+export default function SearchPage() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<'decisions' | 'actions' | 'meetings'>(initialTab);
-  const [filters, setFilters] = useState<FilterState>(initialFilters);
+  const { summaries, loading } = useGlobalMeetingSummaries();
+  
+  // Initialize state based on URL parameters
+  const [activeTab, setActiveTab] = useState<'meetings' | 'actions' | 'decisions'>(
+    (router.query.tab as 'meetings' | 'actions' | 'decisions') || 'meetings'
+  );
+  const [filters, setFilters] = useState<FilterState>(getFilterStateFromUrl(router.query));
   const [isInitialized, setIsInitialized] = useState(false);
+  
+  // Refs for handling navigation and user actions
   const isUserAction = useRef(false);
   const lastUserActionTimestamp = useRef<number>(Date.now());
   const pendingTabChange = useRef<string | null>(null);
@@ -65,7 +60,7 @@ export default function SearchPage({
       const timeSinceLastUserAction = Date.now() - lastUserActionTimestamp.current;
       if (!isUserAction.current && timeSinceLastUserAction > 500) {
         const newFilters = getFilterStateFromUrl(router.query);
-        const newTab = (router.query.tab as 'decisions' | 'actions' | 'meetings') || 'decisions';
+        const newTab = (router.query.tab as 'meetings' | 'actions' | 'decisions') || 'meetings';
         
         setFilters(newFilters);
         setActiveTab(newTab);
@@ -79,7 +74,7 @@ export default function SearchPage({
     };
   }, [router]);
 
-  const handleTabChange = (tab: 'decisions' | 'actions' | 'meetings') => {
+  const handleTabChange = (tab: 'meetings' | 'actions' | 'decisions') => {
     if (tab === activeTab) return;
     
     isUserAction.current = true;
@@ -99,162 +94,102 @@ export default function SearchPage({
     }));
   };
 
-  /*if (error) {
+  // Show loading state while data is being fetched
+  if (loading) {
     return (
-      <div className={styles.errorContainer}>
-        <h2>Error Loading Data</h2>
-        <p>{error}</p>
+      <div className={styles.loadingContainer}>
+        <div className={styles.loadingSpinner}>Loading...</div>
       </div>
     );
-  }*/
+  }
 
   return (
-    <MeetingSummariesPageProvider initialData={initialData}>
-      <div className={styles.searchPage}>
-        {process.env.NEXT_PUBLIC_NODE_ENV === 'test' && (
-          <DataDebugger filters={filters} />
-        )}
-        
-        <div className={styles.filtersSection}>
-          <div className={styles.filterControls}>
-            <SearchBar 
-              value={filters.search} 
-              onChange={(value) => handleFilterChange({ search: value })}
-              placeholder={`Search ${
-                activeTab === 'decisions' 
-                  ? 'decisions' 
-                  : activeTab === 'actions' 
-                    ? 'action items'
-                    : 'meetings'
-              }...`}
+    <div className={styles.searchPage}>
+      {process.env.NEXT_PUBLIC_NODE_ENV === 'test' && (
+        <DataDebugger filters={filters} />
+      )}
+      
+      <div className={styles.filtersSection}>
+        <div className={styles.filterControls}>
+          <SearchBar 
+            value={filters.search} 
+            onChange={(value) => handleFilterChange({ search: value })}
+            placeholder={`Search ${
+              activeTab === 'meetings' 
+                ? 'meetings'
+                : activeTab === 'actions' 
+                  ? 'action items'
+                  : 'decisions'
+            }...`}
+          />
+          <HowToModal />
+        </div>
+        <div className={styles.filterGroup}>
+          <WorkgroupFilter 
+            value={filters.workgroup}
+            onChange={(value) => handleFilterChange({ workgroup: value })}
+          />
+          <DateFilter
+            value={filters.date}
+            onChange={(value) => handleFilterChange({ date: value })}
+          />
+          {activeTab === 'decisions' && (
+            <EffectFilter 
+              value={filters.effect}
+              onChange={(value) => handleFilterChange({ effect: value })}
             />
-            <HowToModal /> {/* Add the modal here */}
-          </div>
-          <div className={styles.filterGroup}>
-            <WorkgroupFilter 
-              value={filters.workgroup}
-              onChange={(value) => handleFilterChange({ workgroup: value })}
-            />
-            <DateFilter
-              value={filters.date}
-              onChange={(value) => handleFilterChange({ date: value })}
-            />
-            {activeTab === 'decisions' && (
-              <EffectFilter 
-                value={filters.effect}
-                onChange={(value) => handleFilterChange({ effect: value })}
+          )}
+          {activeTab === 'actions' && (
+            <>
+              <StatusFilter 
+                value={filters.status}
+                onChange={(value) => handleFilterChange({ status: value })}
               />
-            )}
-            {activeTab === 'actions' && (
-              <>
-                <StatusFilter 
-                  value={filters.status}
-                  onChange={(value) => handleFilterChange({ status: value })}
-                />
-                <AssigneeFilter 
-                  value={filters.assignee}
-                  onChange={(value) => handleFilterChange({ assignee: value })}
-                />
-              </>
-            )}
-          </div>
-        </div>
-
-        <div className={styles.tabs}>
-          <button 
-            className={`${styles.tab} ${activeTab === 'decisions' ? styles.active : ''}`}
-            onClick={() => handleTabChange('decisions')}
-            aria-selected={activeTab === 'decisions'}
-            role="tab"
-          >
-            Decisions
-          </button>
-          <button 
-            className={`${styles.tab} ${activeTab === 'actions' ? styles.active : ''}`}
-            onClick={() => handleTabChange('actions')}
-            aria-selected={activeTab === 'actions'}
-            role="tab"
-          >
-            Action Items
-          </button>
-          <button 
-            className={`${styles.tab} ${activeTab === 'meetings' ? styles.active : ''}`}
-            onClick={() => handleTabChange('meetings')}
-            aria-selected={activeTab === 'meetings'}
-            role="tab"
-          >
-            Meetings
-          </button>
-        </div>
-          
-        <div className={styles.tableContainer}>
-          {activeTab === 'decisions' ? (
-            <DecisionsTable 
-              filters={filters} 
-              initialData={initialData} 
-            />
-          ) : activeTab === 'actions' ? (
-            <ActionItemsTable 
-              filters={filters} 
-              initialData={initialData} 
-            />
-          ) : (
-            <MeetingsTable 
-              filters={filters} 
-              initialData={initialData} 
-            />
+              <AssigneeFilter 
+                value={filters.assignee}
+                onChange={(value) => handleFilterChange({ assignee: value })}
+              />
+            </>
           )}
         </div>
       </div>
-    </MeetingSummariesPageProvider>
+
+      <div className={styles.tabs}>
+        <button 
+          className={`${styles.tab} ${activeTab === 'meetings' ? styles.active : ''}`}
+          onClick={() => handleTabChange('meetings')}
+          aria-selected={activeTab === 'meetings'}
+          role="tab"
+        >
+          Meetings
+        </button>
+        <button 
+          className={`${styles.tab} ${activeTab === 'actions' ? styles.active : ''}`}
+          onClick={() => handleTabChange('actions')}
+          aria-selected={activeTab === 'actions'}
+          role="tab"
+        >
+          Action Items
+        </button>
+        <button 
+          className={`${styles.tab} ${activeTab === 'decisions' ? styles.active : ''}`}
+          onClick={() => handleTabChange('decisions')}
+          aria-selected={activeTab === 'decisions'}
+          role="tab"
+        >
+          Decisions
+        </button>
+      </div>
+        
+      <div className={styles.tableContainer}>
+        {activeTab === 'meetings' ? (
+          <MeetingsTable filters={filters} />
+        ) : activeTab === 'actions' ? (
+          <ActionItemsTable filters={filters} />
+        ) : (
+          <DecisionsTable filters={filters} />
+        )}
+      </div>
+    </div>
   );
 }
-
-export const getServerSideProps: GetServerSideProps<SearchPageProps> = async (context) => {
-  const API_KEY = process.env.NEXT_PUBLIC_SERVER_API_KEY;
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
-
-  try {
-    const response = await fetch(`${baseUrl}/api/getMeetingSummaries`, {
-      headers: {
-        'api_key': API_KEY || '',
-      },
-    });
-    
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    
-    const data = await response.json();
-    
-    // Get initial filters and tab from URL parameters
-    const initialFilters = getFilterStateFromUrl(context.query);
-    const initialTab = (context.query.tab as 'decisions' | 'actions' | 'meetings') || 'decisions';
-
-    return {
-      props: {
-        initialData: data,
-        initialFilters,
-        initialTab,
-      },
-    };
-  } catch (error) {
-    console.error('Error fetching meeting summaries:', error);
-    return {
-      props: {
-        initialData: [],
-        initialFilters: {
-          workgroup: '',
-          status: '',
-          search: '',
-          date: '',
-          dateRange: { start: '', end: '' },
-          assignee: '',
-          effect: ''
-        },
-        initialTab: 'decisions',
-        //error: error instanceof Error ? error.message : 'An error occurred',
-      },
-    };
-  }
-};
