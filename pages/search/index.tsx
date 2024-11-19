@@ -21,8 +21,7 @@ import styles from '../../styles/search.module.css';
 interface SearchPageProps {
   initialData: MeetingSummary[];
   initialFilters: FilterState;
-  initialTab: 'decisions' | 'actions' | 'meetings';
-  //error?: string;
+  initialTab: 'meetings' | 'actions' | 'decisions';
 }
 
 export default function SearchPage({ 
@@ -31,7 +30,7 @@ export default function SearchPage({
   initialTab,
 }: SearchPageProps) {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<'decisions' | 'actions' | 'meetings'>(initialTab);
+  const [activeTab, setActiveTab] = useState<'meetings' | 'actions' | 'decisions'>(initialTab);
   const [filters, setFilters] = useState<FilterState>(initialFilters);
   const [isInitialized, setIsInitialized] = useState(false);
   const isUserAction = useRef(false);
@@ -65,7 +64,7 @@ export default function SearchPage({
       const timeSinceLastUserAction = Date.now() - lastUserActionTimestamp.current;
       if (!isUserAction.current && timeSinceLastUserAction > 500) {
         const newFilters = getFilterStateFromUrl(router.query);
-        const newTab = (router.query.tab as 'decisions' | 'actions' | 'meetings') || 'decisions';
+        const newTab = (router.query.tab as 'meetings' | 'actions' | 'decisions') || 'meetings';
         
         setFilters(newFilters);
         setActiveTab(newTab);
@@ -79,7 +78,7 @@ export default function SearchPage({
     };
   }, [router]);
 
-  const handleTabChange = (tab: 'decisions' | 'actions' | 'meetings') => {
+  const handleTabChange = (tab: 'meetings' | 'actions' | 'decisions') => {
     if (tab === activeTab) return;
     
     isUserAction.current = true;
@@ -99,15 +98,6 @@ export default function SearchPage({
     }));
   };
 
-  /*if (error) {
-    return (
-      <div className={styles.errorContainer}>
-        <h2>Error Loading Data</h2>
-        <p>{error}</p>
-      </div>
-    );
-  }*/
-
   return (
     <MeetingSummariesPageProvider initialData={initialData}>
       <div className={styles.searchPage}>
@@ -121,14 +111,14 @@ export default function SearchPage({
               value={filters.search} 
               onChange={(value) => handleFilterChange({ search: value })}
               placeholder={`Search ${
-                activeTab === 'decisions' 
-                  ? 'decisions' 
+                activeTab === 'meetings' 
+                  ? 'meetings'
                   : activeTab === 'actions' 
                     ? 'action items'
-                    : 'meetings'
+                    : 'decisions'
               }...`}
             />
-            <HowToModal /> {/* Add the modal here */}
+            <HowToModal />
           </div>
           <div className={styles.filterGroup}>
             <WorkgroupFilter 
@@ -162,12 +152,12 @@ export default function SearchPage({
 
         <div className={styles.tabs}>
           <button 
-            className={`${styles.tab} ${activeTab === 'decisions' ? styles.active : ''}`}
-            onClick={() => handleTabChange('decisions')}
-            aria-selected={activeTab === 'decisions'}
+            className={`${styles.tab} ${activeTab === 'meetings' ? styles.active : ''}`}
+            onClick={() => handleTabChange('meetings')}
+            aria-selected={activeTab === 'meetings'}
             role="tab"
           >
-            Decisions
+            Meetings
           </button>
           <button 
             className={`${styles.tab} ${activeTab === 'actions' ? styles.active : ''}`}
@@ -178,18 +168,18 @@ export default function SearchPage({
             Action Items
           </button>
           <button 
-            className={`${styles.tab} ${activeTab === 'meetings' ? styles.active : ''}`}
-            onClick={() => handleTabChange('meetings')}
-            aria-selected={activeTab === 'meetings'}
+            className={`${styles.tab} ${activeTab === 'decisions' ? styles.active : ''}`}
+            onClick={() => handleTabChange('decisions')}
+            aria-selected={activeTab === 'decisions'}
             role="tab"
           >
-            Meetings
+            Decisions
           </button>
         </div>
           
         <div className={styles.tableContainer}>
-          {activeTab === 'decisions' ? (
-            <DecisionsTable 
+          {activeTab === 'meetings' ? (
+            <MeetingsTable 
               filters={filters} 
               initialData={initialData} 
             />
@@ -199,7 +189,7 @@ export default function SearchPage({
               initialData={initialData} 
             />
           ) : (
-            <MeetingsTable 
+            <DecisionsTable 
               filters={filters} 
               initialData={initialData} 
             />
@@ -229,7 +219,7 @@ export const getServerSideProps: GetServerSideProps<SearchPageProps> = async (co
     
     // Get initial filters and tab from URL parameters
     const initialFilters = getFilterStateFromUrl(context.query);
-    const initialTab = (context.query.tab as 'decisions' | 'actions' | 'meetings') || 'decisions';
+    const initialTab = (context.query.tab as 'meetings' | 'actions' | 'decisions') || 'meetings';
 
     return {
       props: {
@@ -252,9 +242,8 @@ export const getServerSideProps: GetServerSideProps<SearchPageProps> = async (co
           assignee: '',
           effect: ''
         },
-        initialTab: 'decisions',
-        //error: error instanceof Error ? error.message : 'An error occurred',
+        initialTab: 'meetings',
       },
     };
   }
-};
+}
