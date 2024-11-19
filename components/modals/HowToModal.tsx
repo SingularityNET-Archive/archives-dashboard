@@ -71,7 +71,7 @@ export default function HowToModal() {
                   Use the search bar to find specific content across all records
                 </li>
                 <li className={styles.listItem}>
-                  Click "View Details" in the Meetings tab on any item to see meeting information and highlighted text from search bar results
+                  Click &quot;View Details&quot; in the Meetings tab on any item to see meeting information and highlighted text from search bar results
                 </li>
               </ul>
             </section>
