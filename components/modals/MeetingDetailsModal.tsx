@@ -387,19 +387,15 @@ export default function MeetingDetailsModal({ meeting, isOpen, onClose, searchTe
                         </div>
                       )}
                       
-                      {item.gameRules && item.gameRules.length > 0 && (
+                      {item.gameRules && item.gameRules.trim() !== '' && (
                         <div className={styles.section}>
                           <h4 className={styles.sectionTitle}>Game Rules</h4>
-                          <ul className={styles.itemList}>
-                            {item.gameRules.map((rule, idx) => (
-                              <li key={idx}>
-                                <HighlightedText 
-                                  text={rule} 
-                                  searchTerm={searchTerm}
-                                />
-                              </li>
-                            ))}
-                          </ul>
+                          <p>
+                            <HighlightedText 
+                              text={item.gameRules} 
+                              searchTerm={searchTerm}
+                            />
+                          </p>
                         </div>
                       )}
                       
