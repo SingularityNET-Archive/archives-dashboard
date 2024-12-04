@@ -53,7 +53,7 @@ export interface MeetingSummary {
       townHallSummary: string;
       meetingTopics: string[];
       issues: string[];
-      gameRules: string[];
+      gameRules: string;
       learningPoints: string[];
       status: string;
     }>;

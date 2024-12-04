@@ -136,6 +136,7 @@ export default function MeetingsTable({ filters, className = '' }: MeetingsTable
   }, [summaries, filters, getTagMatchCount, getContentMatchCount]);
 
   const handleMeetingClick = useCallback((meeting: MeetingSummary) => {
+    //console.log('Meeting clicked:', meeting);
     setSelectedMeeting(meeting);
     setIsModalOpen(true);
   }, []);
