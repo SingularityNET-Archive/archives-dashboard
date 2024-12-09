@@ -21,17 +21,36 @@ export default function SearchPage() {
   const router = useRouter();
   const { loading } = useGlobalMeetingSummaries();
   
-  // Initialize state based on URL parameters
-  const [activeTab, setActiveTab] = useState<'meetings' | 'actions' | 'decisions'>(
-    (router.query.tab as 'meetings' | 'actions' | 'decisions') || 'meetings'
-  );
-  const [filters, setFilters] = useState<FilterState>(getFilterStateFromUrl(router.query));
+  // Initialize with default values
+  const [activeTab, setActiveTab] = useState<'meetings' | 'actions' | 'decisions'>('meetings');
+  const [filters, setFilters] = useState<FilterState>({
+    workgroup: '',
+    status: '',
+    search: '',
+    date: '',
+    dateRange: { start: '', end: '' },
+    assignee: '',
+    effect: ''
+  });
+  
   const [isInitialized, setIsInitialized] = useState(false);
   
   // Refs for handling navigation and user actions
   const isUserAction = useRef(false);
   const lastUserActionTimestamp = useRef<number>(Date.now());
   const pendingTabChange = useRef<string | null>(null);
+
+  // Initialize state when router is ready
+  useEffect(() => {
+    if (!router.isReady) return;
+
+    const initialTab = (router.query.tab as 'meetings' | 'actions' | 'decisions') || 'meetings';
+    const initialFilters = getFilterStateFromUrl(router.query);
+    
+    setActiveTab(initialTab);
+    setFilters(initialFilters);
+    setIsInitialized(true);
+  }, [router.isReady]);
 
   // Memoized filter update handler
   const handleFilterChange = useCallback((updates: Partial<FilterState>) => {
@@ -42,8 +61,7 @@ export default function SearchPage() {
 
   // Handle URL updates when filters or tab changes
   useEffect(() => {
-    if (!isInitialized) {
-      setIsInitialized(true);
+    if (!isInitialized || !router.isReady) {
       return;
     }
 
