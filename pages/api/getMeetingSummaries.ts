@@ -6,10 +6,13 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  // Set no-cache headers
-  res.setHeader('Cache-Control', 'no-store, max-age=0');
-  res.setHeader('Pragma', 'no-cache');
-  res.setHeader('Expires', '0');
+  // Set cache for 24 hours
+  // s-maxage is for CDN caching
+  // stale-while-revalidate allows serving stale content while fetching fresh data
+  res.setHeader(
+    'Cache-Control',
+    'public, s-maxage=86400, stale-while-revalidate=43200'
+  );
 
   const API_KEY = process.env.NEXT_PUBLIC_SERVER_API_KEY;
   const apiKeyHeader = req.headers['api_key'];
