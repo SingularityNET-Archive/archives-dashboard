@@ -58,12 +58,16 @@ export function GlobalMeetingSummariesProvider({ children }: { children: React.R
     const fetchData = async () => {
       const API_KEY = process.env.NEXT_PUBLIC_SERVER_API_KEY;
       const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
-
+      
       try {
         const response = await fetch(`${baseUrl}/api/getMeetingSummaries`, {
           headers: {
             'api_key': API_KEY || '',
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache'
           },
+          // Add cache: 'no-store' to force bypassing the browser cache
+          cache: 'no-store',
         });
 
         if (!response.ok) {
@@ -86,9 +90,13 @@ export function GlobalMeetingSummariesProvider({ children }: { children: React.R
   }, []);
 
   return (
-    <GlobalMeetingSummariesContext.Provider 
-      value={{ summaries, loading, error, getActionItems, getDecisions }}
-    >
+    <GlobalMeetingSummariesContext.Provider value={{
+      summaries,
+      loading,
+      error,
+      getActionItems,
+      getDecisions
+    }}>
       {children}
     </GlobalMeetingSummariesContext.Provider>
   );
