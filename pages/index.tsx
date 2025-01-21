@@ -33,7 +33,7 @@ const Home: NextPage = () => {
         <section className={styles.section}>
           <h2 className={styles.sectionTitle}>Getting Started</h2>
           <p>
-            The Archives Dashboard provides a centralized view of all meeting records. You can:
+            The Archives Dashboard provides a centralized view of all archived meeting records. You can:
           </p>
           <ul className={styles.list}>
             <li className={styles.listItem}>
