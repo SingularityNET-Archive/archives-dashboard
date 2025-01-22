@@ -22,9 +22,9 @@ export default function MeetingDetailsModal({ meeting, isOpen, onClose, searchTe
     meeting.summary.meetingInfo.mediaLink ||
     meeting.summary.meetingInfo.otherMediaLink;
 
-  const hasTags = meeting.summary.tags.topicsCovered ||
-    meeting.summary.tags.emotions ||
-    meeting.summary.tags.other;
+    const hasTags = meeting.summary.tags?.topicsCovered ||
+    meeting.summary.tags?.emotions ||
+    meeting.summary.tags?.other;  
 
   return (
     <>
@@ -424,7 +424,7 @@ export default function MeetingDetailsModal({ meeting, isOpen, onClose, searchTe
                 <div className={styles.section}>
                   <h3 className={styles.sectionTitle}>Tags</h3>
                   <div className={styles.infoGrid}>
-                    {meeting.summary.tags.topicsCovered && (
+                    {meeting.summary.tags?.topicsCovered && (
                       <div className={styles.infoItem}>
                         <p className={styles.infoLabel}>Topics Covered</p>
                         <p>
@@ -435,7 +435,7 @@ export default function MeetingDetailsModal({ meeting, isOpen, onClose, searchTe
                         </p>
                       </div>
                     )}
-                    {meeting.summary.tags.emotions && (
+                    {meeting.summary.tags?.emotions && (
                       <div className={styles.infoItem}>
                         <p className={styles.infoLabel}>Emotions</p>
                         <p>
@@ -446,7 +446,7 @@ export default function MeetingDetailsModal({ meeting, isOpen, onClose, searchTe
                         </p>
                       </div>
                     )}
-                    {meeting.summary.tags.other && (
+                    {meeting.summary.tags?.other && (
                       <div className={styles.infoItem}>
                         <p className={styles.infoLabel}>Other Tags</p>
                         <p>

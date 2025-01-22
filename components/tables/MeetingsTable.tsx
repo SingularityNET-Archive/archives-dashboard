@@ -1,5 +1,6 @@
 // components/tables/MeetingsTable.tsx
 import React, { useState, useMemo, useCallback } from 'react';
+import { Check } from 'lucide-react';
 import { useGlobalMeetingSummaries } from '../../context/GlobalMeetingSummariesContext';
 import { FilterState, MeetingSummary, TimestampedVideoSection } from '../../types/meetings';
 import { formatDate } from '../../utils/dateFormatting';
@@ -173,6 +174,7 @@ export default function MeetingsTable({ filters, className = '' }: MeetingsTable
                 </>
               )}
               <th className={styles.metricsColumn} scope="col">Content Overview</th>
+              <th className={styles.iconColumn} scope="col">Archived</th>
               <th className={styles.actionColumn} scope="col">Actions</th>
             </tr>
           </thead>
@@ -225,6 +227,15 @@ export default function MeetingsTable({ filters, className = '' }: MeetingsTable
                       </span>
                     </div>
                   </td>
+                  <td className={styles.archiveStatus}>
+                    {meeting.confirmed && (
+                      <Check 
+                        className="text-green-500" 
+                        size={20}
+                        aria-label="Meeting archived"
+                      />
+                    )}
+                  </td>
                   <td>
                     <button 
                       onClick={() => handleMeetingClick(meeting)}
@@ -240,7 +251,7 @@ export default function MeetingsTable({ filters, className = '' }: MeetingsTable
             {filteredMeetings.length === 0 && (
               <tr>
                 <td 
-                  colSpan={filters.search ? 7 : 5} 
+                  colSpan={filters.search ? 8 : 6} 
                   className={styles.noResults}
                 >
                   No meetings match the current filters

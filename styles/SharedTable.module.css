@@ -346,3 +346,13 @@
 .timestampDescription {
   color: #374151;
 }
+
+.iconColumn {
+  width: 10%;
+  text-align: center;
+}
+
+.archiveStatus {
+  text-align: center;
+  vertical-align: middle;
+}
