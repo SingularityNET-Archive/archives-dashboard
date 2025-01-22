@@ -7,8 +7,6 @@ export default async function handler(
   res: NextApiResponse
 ) {
   // Set cache for 24 hours
-  // s-maxage is for CDN caching
-  // stale-while-revalidate allows serving stale content while fetching fresh data
   res.setHeader(
     'Cache-Control',
     'public, s-maxage=86400, stale-while-revalidate=43200'
@@ -27,7 +25,8 @@ export default async function handler(
   }
 
   try {
-    const { data, error } = await supabase
+    // Query for confirmed meetings
+    const { data: confirmedData, error: confirmedError } = await supabase
       .from('meetingsummaries')
       .select(`
         meeting_id,
@@ -36,17 +35,59 @@ export default async function handler(
         confirmed,
         summary,
         workgroup_id,
-        name
+        name,
+        date
       `)
       .eq('confirmed', true);
 
-    if (error) throw error;
-    if (!data) {
-      throw new Error('No data received from database');
-    }
+    if (confirmedError) throw confirmedError;
+
+    // Extract keys for confirmed meetings
+    const confirmedKeys = new Set(
+      (confirmedData || []).map(
+        (item) => `${item.workgroup_id}-${item.date}`
+      )
+    );
+
+    // Query for unconfirmed meetings within the last 3 months
+    const threeMonthsAgo = new Date();
+    threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+
+    const { data: unconfirmedData, error: unconfirmedError } = await supabase
+      .from('meetingsummaries')
+      .select(`
+        meeting_id,
+        created_at,
+        updated_at,
+        confirmed,
+        summary,
+        workgroup_id,
+        name,
+        date
+      `)
+      .eq('confirmed', false)
+      .gte('date', threeMonthsAgo.toISOString());
+
+    if (unconfirmedError) throw unconfirmedError;
+
+    // Filter unconfirmed meetings to exclude those with a matching confirmed meeting
+    const filteredUnconfirmed = unconfirmedData
+      .filter((item) => !confirmedKeys.has(`${item.workgroup_id}-${item.date}`))
+      .reduce((acc, curr) => {
+        const key = `${curr.workgroup_id}-${curr.date}`;
+        if (!acc[key] || new Date(curr.updated_at) > new Date(acc[key].updated_at)) {
+          acc[key] = curr;
+        }
+        return acc;
+      }, {} as Record<string,  typeof unconfirmedData[0]>);
+
+    const filteredUnconfirmedArray = Object.values(filteredUnconfirmed);
+
+    // Combine confirmed and filtered unconfirmed data
+    const combinedData = [...(confirmedData || []), ...filteredUnconfirmedArray];
 
     setCorsHeaders(res);
-    res.status(200).json(data);
+    res.status(200).json(combinedData);
   } catch (error) {
     console.error('API Error:', error);
     res.status(500).json({ 
