@@ -14,7 +14,7 @@ interface MeetingDetailsModalProps {
 
 export default function MeetingDetailsModal({ meeting, isOpen, onClose, searchTerm }: MeetingDetailsModalProps) {
   if (!isOpen || !meeting) return null;
-
+  console.log(meeting)
   const hasLinks = meeting.summary.meetingInfo.googleSlides ||
     meeting.summary.meetingInfo.meetingVideoLink ||
     meeting.summary.meetingInfo.miroBoardLink ||
@@ -114,6 +114,15 @@ export default function MeetingDetailsModal({ meeting, isOpen, onClose, searchTe
                           text={meeting.summary.meetingInfo.townHallNumber} 
                           searchTerm={searchTerm}
                         />
+                      </p>
+                    </div>
+                  )}
+                  {(meeting.summary.canceledSummary || meeting.summary.noSummaryGiven) && (
+                    <div className={styles.section}>
+                      <p>
+                        {meeting.summary.canceledSummary
+                          ? meeting.summary.canceledSummaryText
+                          : meeting.summary.noSummaryGivenText}
                       </p>
                     </div>
                   )}
@@ -279,7 +288,7 @@ export default function MeetingDetailsModal({ meeting, isOpen, onClose, searchTe
                         </div>
                       )}
 
-{item.decisionItems && item.decisionItems.length > 0 && (
+                      {item.decisionItems && item.decisionItems.length > 0 && (
                         <div className={styles.section}>
                           <h4 className={styles.sectionTitle}>Decisions</h4>
                           <ul className={styles.itemList}>
