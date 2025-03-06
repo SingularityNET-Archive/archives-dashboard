@@ -14,7 +14,7 @@ interface MeetingDetailsModalProps {
 
 export default function MeetingDetailsModal({ meeting, isOpen, onClose, searchTerm }: MeetingDetailsModalProps) {
   if (!isOpen || !meeting) return null;
-  console.log(meeting)
+  //console.log(meeting)
   const hasLinks = meeting.summary.meetingInfo.googleSlides ||
     meeting.summary.meetingInfo.meetingVideoLink ||
     meeting.summary.meetingInfo.miroBoardLink ||
