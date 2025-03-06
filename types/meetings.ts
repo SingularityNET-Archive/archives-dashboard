@@ -34,6 +34,10 @@ export interface MeetingSummary {
   summary: {
     workgroup: string; 
     workgroup_id: string;
+    canceledSummary: boolean;
+    canceledSummaryText: string;
+    noSummaryGiven: boolean;
+    noSummaryGivenText: string;
     agendaItems: Array<{
       agenda?: string;
       actionItems?: Array<{
@@ -71,7 +75,7 @@ export interface MeetingSummary {
       otherMediaLink: string;
       transcriptLink: string;
       mediaLink: string;
-      workingDocs: any[];
+      workingDocs: { title: string; link: string }[];
       timestampedVideo?: TimestampedVideo;
     };
     tags: {
