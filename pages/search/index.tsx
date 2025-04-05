@@ -19,8 +19,11 @@ import styles from '../../styles/search.module.css';
 
 export default function SearchPage() {
   const router = useRouter();
-  const { loading } = useGlobalMeetingSummaries();
-  
+  const { loading, lastFetchedAt } = useGlobalMeetingSummaries();
+
+  // Format timestamp for display
+  const formattedLastFetchedAt = lastFetchedAt ? new Date(lastFetchedAt).toLocaleString() : 'Loading...';
+
   // Initialize with default values
   const [activeTab, setActiveTab] = useState<'meetings' | 'actions' | 'decisions'>('meetings');
   const [filters, setFilters] = useState<FilterState>({
@@ -32,9 +35,9 @@ export default function SearchPage() {
     assignee: '',
     effect: ''
   });
-  
+
   const [isInitialized, setIsInitialized] = useState(false);
-  
+
   // Refs for handling navigation and user actions
   const isUserAction = useRef(false);
   const lastUserActionTimestamp = useRef<number>(Date.now());
@@ -46,7 +49,7 @@ export default function SearchPage() {
 
     const initialTab = (router.query.tab as 'meetings' | 'actions' | 'decisions') || 'meetings';
     const initialFilters = getFilterStateFromUrl(router.query);
-    
+
     setActiveTab(initialTab);
     setFilters(initialFilters);
     setIsInitialized(true);
@@ -79,7 +82,7 @@ export default function SearchPage() {
       if (!isUserAction.current && timeSinceLastUserAction > 500) {
         const newFilters = getFilterStateFromUrl(router.query);
         const newTab = (router.query.tab as 'meetings' | 'actions' | 'decisions') || 'meetings';
-        
+
         setFilters(newFilters);
         setActiveTab(newTab);
       }
@@ -94,15 +97,15 @@ export default function SearchPage() {
 
   const handleTabChange = (tab: 'meetings' | 'actions' | 'decisions') => {
     if (tab === activeTab) return;
-    
+
     isUserAction.current = true;
     lastUserActionTimestamp.current = Date.now();
     pendingTabChange.current = tab;
-    
+
     setActiveTab(tab);
-    setFilters(prev => ({ 
-      ...prev, 
-      search: '', 
+    setFilters(prev => ({
+      ...prev,
+      search: '',
       status: '',
       effect: '',
       assignee: '',
@@ -126,24 +129,23 @@ export default function SearchPage() {
       {process.env.NEXT_PUBLIC_NODE_ENV === 'test' && (
         <DataDebugger filters={filters} />
       )}
-      
+
       <div className={styles.filtersSection}>
         <div className={styles.filterControls}>
-          <SearchBar 
-            value={filters.search} 
+          <SearchBar
+            value={filters.search}
             onChange={(value) => handleFilterChange({ search: value })}
-            placeholder={`Search ${
-              activeTab === 'meetings' 
-                ? 'meetings'
-                : activeTab === 'actions' 
-                  ? 'action items'
-                  : 'decisions'
-            }...`}
+            placeholder={`Search ${activeTab === 'meetings'
+              ? 'meetings'
+              : activeTab === 'actions'
+                ? 'action items'
+                : 'decisions'
+              }...`}
           />
           <HowToModal />
         </div>
         <div className={styles.filterGroup}>
-          <WorkgroupFilter 
+          <WorkgroupFilter
             value={filters.workgroup}
             onChange={(value) => handleFilterChange({ workgroup: value })}
           />
@@ -152,28 +154,31 @@ export default function SearchPage() {
             onChange={(value) => handleFilterChange({ date: value })}
           />
           {activeTab === 'decisions' && (
-            <EffectFilter 
+            <EffectFilter
               value={filters.effect}
               onChange={(value) => handleFilterChange({ effect: value })}
             />
           )}
           {activeTab === 'actions' && (
             <>
-              <StatusFilter 
+              <StatusFilter
                 value={filters.status}
                 onChange={(value) => handleFilterChange({ status: value })}
               />
-              <AssigneeFilter 
+              <AssigneeFilter
                 value={filters.assignee}
                 onChange={(value) => handleFilterChange({ assignee: value })}
               />
             </>
           )}
         </div>
+        <div className={styles.lastFetchedInfo}>
+          Last updated: {formattedLastFetchedAt}
+        </div>
       </div>
 
       <div className={styles.tabs}>
-        <button 
+        <button
           className={`${styles.tab} ${activeTab === 'meetings' ? styles.active : ''}`}
           onClick={() => handleTabChange('meetings')}
           aria-selected={activeTab === 'meetings'}
@@ -181,7 +186,7 @@ export default function SearchPage() {
         >
           Meetings
         </button>
-        <button 
+        <button
           className={`${styles.tab} ${activeTab === 'actions' ? styles.active : ''}`}
           onClick={() => handleTabChange('actions')}
           aria-selected={activeTab === 'actions'}
@@ -189,7 +194,7 @@ export default function SearchPage() {
         >
           Action Items
         </button>
-        <button 
+        <button
           className={`${styles.tab} ${activeTab === 'decisions' ? styles.active : ''}`}
           onClick={() => handleTabChange('decisions')}
           aria-selected={activeTab === 'decisions'}
@@ -198,7 +203,7 @@ export default function SearchPage() {
           Decisions
         </button>
       </div>
-        
+
       <div className={styles.tableContainer}>
         {activeTab === 'meetings' ? (
           <MeetingsTable filters={filters} />
