@@ -9,7 +9,7 @@ export default async function handler(
   // Set cache for 24 hours
   res.setHeader(
     'Cache-Control',
-    'public, s-maxage=86400, stale-while-revalidate=43200'
+    'public, s-maxage=300, stale-while-revalidate=60'
   );
 
   const API_KEY = process.env.NEXT_PUBLIC_SERVER_API_KEY;
