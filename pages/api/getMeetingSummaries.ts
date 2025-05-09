@@ -6,11 +6,14 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  // Set cache for 24 hours
+  // Reduce cache to 5 minutes or remove entirely
   res.setHeader(
     'Cache-Control',
     'public, s-maxage=300, stale-while-revalidate=60'
   );
+
+  // OR for no caching:
+  // res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
 
   const API_KEY = process.env.NEXT_PUBLIC_SERVER_API_KEY;
   const apiKeyHeader = req.headers['api_key'];
