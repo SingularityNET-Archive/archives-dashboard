@@ -40,6 +40,8 @@ import HowToModal from '../../components/modals/HowToModal';
 import {
   getFilterStateFromUrl,
   updateUrlWithFilters,
+  pushTab,
+  cancelPendingPush,
   filtersToApiQuery,
   parseTab,
   parseOffset,
@@ -155,47 +157,73 @@ export default function SearchPage(props: SearchPageProps) {
   const router = useRouter();
   const { results, facets, meta, error } = props;
 
-  const [activeTab, setActiveTab] = useState<SearchTab>(props.tab);
   const [filters, setFilters] = useState<FilterState>(props.filters);
   const [isNavigating, setIsNavigating] = useState(false);
 
-  // True while a change made on this page is waiting for the server round trip.
-  // Prevents fresh props from overwriting what the user is still typing.
-  const isUserAction = useRef(false);
-  const pendingTabChange = useRef<SearchTab | null>(null);
+  // The URL is the source of truth for the tab: the results table is rendered
+  // from `props.tab`. `pendingTab` only highlights a clicked tab while its
+  // navigation is in flight, and is cleared whenever a navigation finishes, so
+  // the highlight and the table can never stay out of sync.
+  const [pendingTab, setPendingTab] = useState<SearchTab | null>(null);
+  const activeTab: SearchTab = pendingTab ?? props.tab;
 
-  // Adopt server state on back/forward navigation or external URL changes.
+  // True while a filter edit made on this page is waiting for the server round
+  // trip. Prevents fresh props from overwriting what the user is still typing.
+  const isUserAction = useRef(false);
+
+  // Adopt server filters on back/forward navigation or external URL changes.
   useEffect(() => {
     if (!isUserAction.current) {
-      setActiveTab(props.tab);
       setFilters(props.filters);
     }
     isUserAction.current = false;
-  }, [props.tab, props.filters]);
+  }, [props.filters]);
 
-  // Push local filter changes to the URL, which re-runs getServerSideProps.
+  // Push local filter edits to the URL (debounced), which re-runs getServerSideProps.
   useEffect(() => {
     if (!isUserAction.current) return;
-    const tab = pendingTabChange.current ?? activeTab;
-    updateUrlWithFilters(router, filters, tab);
-    pendingTabChange.current = null;
+    updateUrlWithFilters(router, filters, pendingTab ?? props.tab);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters, activeTab]);
+  }, [filters]);
 
-  // Show a busy state while the next page of results is loading.
+  // A debounced push must not outlive this page.
+  useEffect(() => () => cancelPendingPush(), []);
+
+  // Show a busy state while the next page of results is loading, and drop the
+  // optimistic tab highlight once a navigation has settled:
+  // - routeChangeComplete: new props are already committed, so `props.tab` is right.
+  // - routeChangeError (not cancelled): nothing will land, so fall back to `props.tab`.
+  // - routeChangeError (cancelled): emitted by our own newer push, which already
+  //   owns `pendingTab`; clearing here would un-highlight the tab just clicked.
   useEffect(() => {
-    const start = () => setIsNavigating(true);
-    const end = () => setIsNavigating(false);
+    const start = (url: string) => {
+      setIsNavigating(true);
+      // Leaving the page: a pending filter push must not fire mid-navigation
+      // and yank the user back here.
+      if (new URL(url, window.location.origin).pathname !== router.pathname) {
+        cancelPendingPush();
+      }
+    };
+    const complete = () => {
+      setIsNavigating(false);
+      setPendingTab(null);
+    };
+    const error = (err: unknown) => {
+      setIsNavigating(false);
+      if (!(err as { cancelled?: boolean } | null)?.cancelled) {
+        setPendingTab(null);
+      }
+    };
 
     router.events.on('routeChangeStart', start);
-    router.events.on('routeChangeComplete', end);
-    router.events.on('routeChangeError', end);
+    router.events.on('routeChangeComplete', complete);
+    router.events.on('routeChangeError', error);
     return () => {
       router.events.off('routeChangeStart', start);
-      router.events.off('routeChangeComplete', end);
-      router.events.off('routeChangeError', end);
+      router.events.off('routeChangeComplete', complete);
+      router.events.off('routeChangeError', error);
     };
-  }, [router.events]);
+  }, [router.events, router.pathname]);
 
   const handleFilterChange = useCallback((updates: Partial<FilterState>) => {
     isUserAction.current = true;
@@ -205,17 +233,20 @@ export default function SearchPage(props: SearchPageProps) {
   const handleTabChange = (tab: SearchTab) => {
     if (tab === activeTab) return;
 
-    isUserAction.current = true;
-    pendingTabChange.current = tab;
-
-    setActiveTab(tab);
-    setFilters(prev => ({
-      ...prev,
+    const cleared: FilterState = {
+      ...filters,
       search: '',
       status: '',
       effect: '',
       assignee: '',
-    }));
+    };
+
+    // Not a typing edit: keeps the filters effect from scheduling a second,
+    // debounced push for the same change.
+    isUserAction.current = false;
+    setFilters(cleared);
+    setPendingTab(tab);
+    pushTab(router, cleared, tab);
   };
 
   const goToOffset = (offset: number) => pushOffset(router, Math.max(0, offset));

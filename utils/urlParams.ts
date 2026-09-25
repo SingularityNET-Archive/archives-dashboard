@@ -23,16 +23,21 @@ export const parseOffset = (value: QueryValue): number => {
   return Number.isInteger(n) && n >= 0 ? n : 0;
 };
 
-const debounce = <T extends (...args: never[]) => void>(
-  func: T,
-  wait: number
-): ((...args: Parameters<T>) => void) => {
-  let timeout: ReturnType<typeof setTimeout>;
+type Debounced<T extends (...args: never[]) => void> = ((...args: Parameters<T>) => void) & {
+  cancel: () => void;
+};
 
-  return (...args: Parameters<T>) => {
+const debounce = <T extends (...args: never[]) => void>(func: T, wait: number): Debounced<T> => {
+  let timeout: ReturnType<typeof setTimeout> | undefined;
+
+  const debounced = ((...args: Parameters<T>) => {
     clearTimeout(timeout);
     timeout = setTimeout(() => func(...args), wait);
-  };
+  }) as Debounced<T>;
+
+  debounced.cancel = () => clearTimeout(timeout);
+
+  return debounced;
 };
 
 export const getFilterStateFromUrl = (query: Query): FilterState => {
@@ -97,13 +102,12 @@ const debouncedPush = debounce((router: NextRouter, query: Record<string, string
   pushQuery(router, query);
 }, 500);
 
-export const updateUrlWithFilters = (
-  router: NextRouter,
-  filters: FilterState,
-  activeTab: SearchTab
-) => {
+/** Drops any debounced push that has not fired yet. */
+export const cancelPendingPush = () => debouncedPush.cancel();
+
+const buildQuery = (filters: FilterState, tab: SearchTab): Record<string, string> => {
   // Filter changes always reset paging, so `offset` is deliberately omitted.
-  const query: Record<string, string> = { tab: activeTab };
+  const query: Record<string, string> = { tab };
 
   if (filters.workgroup) query.workgroup = filters.workgroup;
   if (filters.status) query.status = filters.status;
@@ -114,12 +118,28 @@ export const updateUrlWithFilters = (
   if (filters.assignee) query.assignee = filters.assignee;
   if (filters.effect) query.effect = filters.effect;
 
-  // Tab changes navigate immediately; typing is debounced.
-  if (parseTab(router.query.tab) !== activeTab) {
-    pushQuery(router, query);
-  } else {
-    debouncedPush(router, query);
-  }
+  return query;
+};
+
+/**
+ * Debounced push for filter edits (typing). Tab switches must use `pushTab`
+ * so they navigate immediately and discard any pending filter push.
+ */
+export const updateUrlWithFilters = (
+  router: NextRouter,
+  filters: FilterState,
+  tab: SearchTab
+) => {
+  debouncedPush(router, buildQuery(filters, tab));
+};
+
+/**
+ * Immediate push for a tab switch. Cancels any pending debounced push first so
+ * a stale filter edit cannot fire later and revert the tab.
+ */
+export const pushTab = (router: NextRouter, filters: FilterState, tab: SearchTab) => {
+  cancelPendingPush();
+  pushQuery(router, buildQuery(filters, tab));
 };
 
 export const pushOffset = (router: NextRouter, offset: number) => {
