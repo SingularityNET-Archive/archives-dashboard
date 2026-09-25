@@ -27,6 +27,9 @@ embed it in client-side code.
 Note that the dashboard pages (`/search`, `/charts`) render the same data
 without a key. The key protects the API surface, not the dataset itself.
 
+The dashboard's own `/api/search` endpoint is internal: it is unversioned,
+same-origin only, needs no key, and is not part of the `/api/v1` contract.
+
 ## Response shape
 
 Successful responses:

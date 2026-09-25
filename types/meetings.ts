@@ -205,3 +205,28 @@ export interface WorkgroupMonthlyStats {
   totalMeetings: number;
   lastUpdated: string | null;
 }
+
+// ---------------------------------------------------------------------------
+// Search page payload (shared by getServerSideProps, /api/search and the client)
+// ---------------------------------------------------------------------------
+
+export type SearchResults =
+  | { kind: 'meetings'; items: MeetingSearchResult[] }
+  | { kind: 'actions'; items: ActionItem[] }
+  | { kind: 'decisions'; items: Decision[]; stats: DecisionStats };
+
+export interface SearchPayload {
+  tab: SearchTab;
+  filters: FilterState;
+  results: SearchResults;
+  facets: Facets;
+  meta: PageMeta;
+  error: string | null;
+}
+
+/**
+ * A SearchPayload as held in the browser cache. `fetchedAt` is a client-side
+ * timestamp used for freshness checks only; it differs between server and
+ * client, so it must never be rendered.
+ */
+export type CachedSearch = SearchPayload & { fetchedAt: number };

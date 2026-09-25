@@ -94,8 +94,10 @@ export const filtersToApiQuery = (
 };
 
 const pushQuery = (router: NextRouter, query: Record<string, string | string[]>) => {
-  // A full (non-shallow) push so getServerSideProps re-runs with the new filters.
-  router.push({ pathname: router.pathname, query }, undefined, { scroll: false });
+  // Shallow: only the URL changes. The page reads its state from the URL and
+  // fetches results from /api/search through a client cache, so
+  // getServerSideProps only ever runs for the first request and deep links.
+  router.push({ pathname: router.pathname, query }, undefined, { shallow: true, scroll: false });
 };
 
 const debouncedPush = debounce((router: NextRouter, query: Record<string, string>) => {
@@ -141,6 +143,46 @@ export const pushTab = (router: NextRouter, filters: FilterState, tab: SearchTab
   cancelPendingPush();
   pushQuery(router, buildQuery(filters, tab));
 };
+
+/** Path of the internal search endpoint (pages/api/search.ts). */
+export const SEARCH_API_PATH = '/api/search';
+
+/**
+ * Canonical /api/search URL for a tab + filters + offset. Doubles as the client
+ * cache key, so the params are sorted: a tab click, the pager, an idle prefetch
+ * and the server-rendered page must all produce byte-identical keys for the
+ * same query.
+ */
+export const buildSearchApiUrl = (tab: SearchTab, filters: FilterState, offset: number): string => {
+  const query = buildQuery(filters, tab);
+  if (offset > 0) query.offset = String(offset);
+  const params = new URLSearchParams(query);
+  params.sort();
+  return `${SEARCH_API_PATH}?${params.toString()}`;
+};
+
+export const filtersEqual = (a: FilterState, b: FilterState): boolean =>
+  a.workgroup === b.workgroup &&
+  a.status === b.status &&
+  a.search === b.search &&
+  a.date === b.date &&
+  a.dateRange.start === b.dateRange.start &&
+  a.dateRange.end === b.dateRange.end &&
+  a.assignee === b.assignee &&
+  a.effect === b.effect;
+
+/**
+ * The filters a tab switch carries over: workgroup and date survive, the
+ * tab-specific ones are cleared. Used by the tab buttons and by the prefetch so
+ * a prefetched key equals the key a click produces.
+ */
+export const clearedForTab = (filters: FilterState): FilterState => ({
+  ...filters,
+  search: '',
+  status: '',
+  effect: '',
+  assignee: '',
+});
 
 export const pushOffset = (router: NextRouter, offset: number) => {
   const query: Record<string, string | string[]> = {};

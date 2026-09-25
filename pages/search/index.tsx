@@ -1,32 +1,10 @@
 // pages/search/index.tsx
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useRouter } from 'next/router';
 import type { GetServerSideProps } from 'next';
-import type {
-  ActionItem,
-  Decision,
-  DecisionStats,
-  Facets,
-  FilterState,
-  MeetingSearchResult,
-  PageMeta,
-  SearchTab,
-} from '../../types/meetings';
-import {
-  loadMeetingSummaries,
-  buildFacets,
-  paginate,
-  parseMeetingQuery,
-  parseActionItemQuery,
-  parseDecisionQuery,
-  filterMeetings,
-  flattenActionItems,
-  filterActionItems,
-  flattenDecisions,
-  filterDecisions,
-  decisionStats,
-  ParamError,
-} from '../../lib/meetingSummaries';
+import useSWR, { SWRConfig, useSWRConfig } from 'swr';
+import type { CachedSearch, FilterState, SearchPayload, SearchTab } from '../../types/meetings';
+import { runSearch, failurePayload, LOAD_ERROR_MESSAGE } from '../../lib/meetingSummaries/searchPage';
 import SearchBar from '../../components/filters/SearchBar';
 import WorkgroupFilter from '../../components/filters/WorkgroupFilter';
 import StatusFilter from '../../components/filters/StatusFilter';
@@ -42,45 +20,34 @@ import {
   updateUrlWithFilters,
   pushTab,
   cancelPendingPush,
-  filtersToApiQuery,
   parseTab,
   parseOffset,
   pushOffset,
+  buildSearchApiUrl,
+  filtersEqual,
+  clearedForTab,
 } from '../../utils/urlParams';
+import {
+  fetchSearch,
+  isFresh,
+  restorePersistedEntries,
+  SWR_CONFIG,
+  SWR_OPTIONS,
+  type SearchFetchError,
+} from '../../lib/searchCache';
 import { formatDateTime } from '../../utils/dateFormatting';
 import styles from '../../styles/search.module.css';
 
-const PAGE_SIZE = 100;
+const TABS: readonly SearchTab[] = ['meetings', 'actions', 'decisions'];
 
-type SearchResults =
-  | { kind: 'meetings'; items: MeetingSearchResult[] }
-  | { kind: 'actions'; items: ActionItem[] }
-  | { kind: 'decisions'; items: Decision[]; stats: DecisionStats };
+export type SearchPageProps = SearchPayload;
 
-export interface SearchPageProps {
-  tab: SearchTab;
-  filters: FilterState;
-  results: SearchResults;
-  facets: Facets;
-  meta: PageMeta;
-  error: string | null;
-}
-
-const EMPTY_FACETS: Facets = {
-  workgroups: [],
-  statuses: [],
-  assignees: [],
-  effects: [],
-  tags: [],
-  types: [],
-};
-
-const emptyResults = (tab: SearchTab): SearchResults => {
-  if (tab === 'actions') return { kind: 'actions', items: [] };
-  if (tab === 'decisions') return { kind: 'decisions', items: [], stats: decisionStats([]) };
-  return { kind: 'meetings', items: [] };
-};
-
+/**
+ * Server-renders the first request (and deep links). Every later tab switch,
+ * filter edit or page change is a shallow URL update: the page then reads its
+ * state from the URL and gets results from /api/search through a client-side
+ * cache (lib/searchCache.ts), so this does not run again.
+ */
 export const getServerSideProps: GetServerSideProps<SearchPageProps> = async ({ query, res }) => {
   // No shared cache: Netlify's Next.js runtime keys its CDN cache without the
   // page's own query params (see the Netlify-Vary header it emits), so a
@@ -89,174 +56,196 @@ export const getServerSideProps: GetServerSideProps<SearchPageProps> = async ({ 
   // only pays for filtering. Same policy as lib/meetingSummaries/http.ts.
   res.setHeader('Cache-Control', 'private, no-store');
 
-  const tab = parseTab(query.tab);
-  const filters = getFilterStateFromUrl(query);
-  const offset = parseOffset(query.offset);
-  const raw = filtersToApiQuery(tab, filters, { limit: PAGE_SIZE, offset });
-
-  const failure = (error: string, facets: Facets, loadedAt: string): { props: SearchPageProps } => ({
-    props: {
-      tab,
-      filters,
-      results: emptyResults(tab),
-      facets,
-      meta: { total: 0, limit: PAGE_SIZE, offset, hasMore: false, loadedAt },
-      error,
-    },
-  });
-
-  let rows;
-  let loadedAt: string;
   try {
-    ({ rows, loadedAt } = await loadMeetingSummaries());
+    return { props: await runSearch(query) };
   } catch (err) {
     console.error('Failed to load meeting summaries:', err);
-    return failure('Could not load meeting summaries. Please try again later.', EMPTY_FACETS, '');
-  }
-
-  const facets = buildFacets(rows);
-
-  try {
-    let results: SearchResults;
-    let page: { total: number; limit: number; offset: number; hasMore: boolean };
-
-    if (tab === 'actions') {
-      const params = parseActionItemQuery(raw);
-      const paged = paginate(filterActionItems(flattenActionItems(rows), params), params.limit, params.offset);
-      results = { kind: 'actions', items: paged.data };
-      page = paged;
-    } else if (tab === 'decisions') {
-      const params = parseDecisionQuery(raw);
-      const filtered = filterDecisions(flattenDecisions(rows), params);
-      const paged = paginate(filtered, params.limit, params.offset);
-      results = { kind: 'decisions', items: paged.data, stats: decisionStats(filtered) };
-      page = paged;
-    } else {
-      const params = parseMeetingQuery(raw);
-      const paged = paginate(filterMeetings(rows, params), params.limit, params.offset);
-      results = { kind: 'meetings', items: paged.data };
-      page = paged;
-    }
-
-    return {
-      props: {
-        tab,
-        filters,
-        results,
-        facets,
-        meta: { total: page.total, limit: page.limit, offset: page.offset, hasMore: page.hasMore, loadedAt },
-        error: null,
-      },
-    };
-  } catch (err) {
-    if (err instanceof ParamError) {
-      return failure(err.message, facets, loadedAt);
-    }
-    throw err;
+    return { props: failurePayload(query, LOAD_ERROR_MESSAGE) };
   }
 };
 
 export default function SearchPage(props: SearchPageProps) {
+  // Page-scoped SWR config: the persisted cache provider only applies here.
+  return (
+    <SWRConfig value={SWR_CONFIG}>
+      <SearchPageInner {...props} />
+    </SWRConfig>
+  );
+}
+
+function SearchPageInner(props: SearchPageProps) {
   const router = useRouter();
-  const { results, facets, meta, error } = props;
+  const { cache, mutate } = useSWRConfig();
+
+  // The URL is the source of truth. This holds whether a navigation was a
+  // shallow push from this page or a full one (Back to the first entry re-runs
+  // getServerSideProps): both end up in router.query.
+  const { urlTab, urlFilters, urlOffset } = useMemo(
+    () => ({
+      urlTab: parseTab(router.query.tab),
+      urlFilters: getFilterStateFromUrl(router.query),
+      urlOffset: parseOffset(router.query.offset),
+    }),
+    // router.query is a fresh object on every render; asPath is the stable
+    // identity of what it contains.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [router.asPath]
+  );
+  const key = buildSearchApiUrl(urlTab, urlFilters, urlOffset);
+
+  // The server payload. Next spreads pageProps into a new object on every
+  // render, but the payload inside only changes when getServerSideProps ran.
+  const ssrKey = buildSearchApiUrl(props.tab, props.filters, props.meta.offset);
+  const ssrFallback: CachedSearch = { ...props, fetchedAt: 0 };
+
+  const {
+    data,
+    error: fetchError,
+    isLoading,
+    isValidating,
+    mutate: revalidate,
+  } = useSWR<CachedSearch, SearchFetchError>(key, fetchSearch, {
+    ...SWR_OPTIONS,
+    fallbackData: key === ssrKey ? ssrFallback : undefined,
+  });
+  const view: SearchPayload = data ?? ssrFallback;
 
   const [filters, setFilters] = useState<FilterState>(props.filters);
-  const [isNavigating, setIsNavigating] = useState(false);
+  const filtersRef = useRef(filters);
+  useEffect(() => {
+    filtersRef.current = filters;
+  }, [filters]);
 
-  // The URL is the source of truth for the tab: the results table is rendered
-  // from `props.tab`. `pendingTab` only highlights a clicked tab while its
-  // navigation is in flight, and is cleared whenever a navigation finishes, so
-  // the highlight and the table can never stay out of sync.
-  const [pendingTab, setPendingTab] = useState<SearchTab | null>(null);
-  const activeTab: SearchTab = pendingTab ?? props.tab;
-
-  // True while a filter edit made on this page is waiting for the server round
-  // trip. Prevents fresh props from overwriting what the user is still typing.
+  // True while a filter edit made on this page is waiting for its URL push.
+  // Prevents the URL from overwriting what the user is still typing.
   const isUserAction = useRef(false);
 
-  // Adopt server filters on back/forward navigation or external URL changes.
+  // Restore persisted pages (after hydration, see restorePersistedEntries) and
+  // seed the cache with the server payload. If the server render failed, retry
+  // from the client instead.
   useEffect(() => {
-    if (!isUserAction.current) {
-      setFilters(props.filters);
+    restorePersistedEntries(ssrKey);
+    if (props.error) {
+      void revalidate();
+      return;
     }
-    isUserAction.current = false;
-  }, [props.filters]);
+    void mutate(ssrKey, { ...props, fetchedAt: Date.now() }, { revalidate: false });
+    // Re-run only when getServerSideProps produced a new payload.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [props.results]);
 
-  // Push local filter edits to the URL (debounced), which re-runs getServerSideProps.
+  // A cached page (in memory, restored or prefetched) is shown at once; when it
+  // is old, refresh it silently in the background. Uncached keys are fetched by
+  // SWR itself.
+  useEffect(() => {
+    const cached = cache.get(key)?.data as CachedSearch | undefined;
+    if (cached && !isFresh(cached)) void revalidate();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key]);
+
+  // Adopt the URL's filters on back/forward navigation or an external URL
+  // change. While a local edit is pending, only clear the pending flag once our
+  // own push has landed; never overwrite what the user is typing.
+  useEffect(() => {
+    if (isUserAction.current) {
+      if (filtersEqual(urlFilters, filtersRef.current)) isUserAction.current = false;
+      return;
+    }
+    setFilters((prev) => (filtersEqual(prev, urlFilters) ? prev : urlFilters));
+  }, [urlFilters]);
+
+  // Push local filter edits to the URL (debounced). Typing back to the URL's
+  // current value needs no push at all.
   useEffect(() => {
     if (!isUserAction.current) return;
-    updateUrlWithFilters(router, filters, pendingTab ?? props.tab);
+    if (filtersEqual(filters, urlFilters)) {
+      cancelPendingPush();
+      isUserAction.current = false;
+      return;
+    }
+    updateUrlWithFilters(router, filters, urlTab);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters]);
 
-  // A debounced push must not outlive this page.
-  useEffect(() => () => cancelPendingPush(), []);
-
-  // Show a busy state while the next page of results is loading, and drop the
-  // optimistic tab highlight once a navigation has settled:
-  // - routeChangeComplete: new props are already committed, so `props.tab` is right.
-  // - routeChangeError (not cancelled): nothing will land, so fall back to `props.tab`.
-  // - routeChangeError (cancelled): emitted by our own newer push, which already
-  //   owns `pendingTab`; clearing here would un-highlight the tab just clicked.
+  // Leaving the page: a pending filter push must not fire mid-navigation and
+  // yank the user back here.
   useEffect(() => {
     const start = (url: string) => {
-      setIsNavigating(true);
-      // Leaving the page: a pending filter push must not fire mid-navigation
-      // and yank the user back here.
       if (new URL(url, window.location.origin).pathname !== router.pathname) {
         cancelPendingPush();
       }
     };
-    const complete = () => {
-      setIsNavigating(false);
-      setPendingTab(null);
-    };
-    const error = (err: unknown) => {
-      setIsNavigating(false);
-      if (!(err as { cancelled?: boolean } | null)?.cancelled) {
-        setPendingTab(null);
-      }
-    };
-
     router.events.on('routeChangeStart', start);
-    router.events.on('routeChangeComplete', complete);
-    router.events.on('routeChangeError', error);
     return () => {
       router.events.off('routeChangeStart', start);
-      router.events.off('routeChangeComplete', complete);
-      router.events.off('routeChangeError', error);
     };
   }, [router.events, router.pathname]);
 
+  // A debounced push must not outlive this page.
+  useEffect(() => () => cancelPendingPush(), []);
+
+  // Next only keeps Back/Forward shallow when both history entries were pushed
+  // shallowly. The server-rendered entry was not, so re-write it as shallow
+  // once; otherwise returning to it re-runs getServerSideProps, and the next
+  // Forward does too.
+  useEffect(() => {
+    void router.replace(router.asPath, undefined, { shallow: true, scroll: false });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Once the current page has settled, warm the other two tabs while idle so
+  // the first switch is instant too. Keys mirror what a tab click produces.
+  useEffect(() => {
+    if (isLoading || fetchError) return;
+    if ((navigator as { connection?: { saveData?: boolean } }).connection?.saveData) return;
+
+    const prefetch = () => {
+      for (const other of TABS) {
+        if (other === urlTab) continue;
+        const otherKey = buildSearchApiUrl(other, clearedForTab(urlFilters), 0);
+        if (cache.get(otherKey)?.data) continue;
+        mutate(otherKey, fetchSearch(otherKey), { revalidate: false }).catch(() => {
+          // A failed prefetch is not an error the user needs to see; the tab
+          // will fetch normally when clicked.
+        });
+      }
+    };
+
+    if (typeof window.requestIdleCallback === 'function') {
+      const id = window.requestIdleCallback(prefetch, { timeout: 2000 });
+      return () => window.cancelIdleCallback(id);
+    }
+    const id = window.setTimeout(prefetch, 300);
+    return () => window.clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key, isLoading, fetchError]);
+
   const handleFilterChange = useCallback((updates: Partial<FilterState>) => {
     isUserAction.current = true;
-    setFilters(prev => ({ ...prev, ...updates }));
+    setFilters((prev) => ({ ...prev, ...updates }));
   }, []);
 
   const handleTabChange = (tab: SearchTab) => {
-    if (tab === activeTab) return;
+    if (tab === urlTab) return;
 
-    const cleared: FilterState = {
-      ...filters,
-      search: '',
-      status: '',
-      effect: '',
-      assignee: '',
-    };
+    const cleared = clearedForTab(filters);
 
     // Not a typing edit: keeps the filters effect from scheduling a second,
     // debounced push for the same change.
     isUserAction.current = false;
     setFilters(cleared);
-    setPendingTab(tab);
     pushTab(router, cleared, tab);
   };
 
   const goToOffset = (offset: number) => pushOffset(router, Math.max(0, offset));
 
+  const { results, facets, meta } = view;
+  const errorMessage = fetchError?.message ?? view.error;
+  const isRefreshing = isValidating && !isLoading;
   const showingFrom = meta.total === 0 ? 0 : meta.offset + 1;
   const showingTo = meta.offset + results.items.length;
-  const searchTerm = props.filters.search;
+  // Highlight with the term the rows on screen were searched with.
+  const searchTerm = view.filters.search;
 
   return (
     <div className={styles.searchPage}>
@@ -265,9 +254,9 @@ export default function SearchPage(props: SearchPageProps) {
           <SearchBar
             value={filters.search}
             onChange={(value) => handleFilterChange({ search: value })}
-            placeholder={`Search ${activeTab === 'meetings'
+            placeholder={`Search ${urlTab === 'meetings'
               ? 'meetings'
-              : activeTab === 'actions'
+              : urlTab === 'actions'
                 ? 'action items'
                 : 'decisions'
               }...`}
@@ -284,14 +273,14 @@ export default function SearchPage(props: SearchPageProps) {
             value={filters.date}
             onChange={(value) => handleFilterChange({ date: value })}
           />
-          {activeTab === 'decisions' && (
+          {urlTab === 'decisions' && (
             <EffectFilter
               value={filters.effect}
               onChange={(value) => handleFilterChange({ effect: value })}
               options={facets.effects}
             />
           )}
-          {activeTab === 'actions' && (
+          {urlTab === 'actions' && (
             <>
               <StatusFilter
                 value={filters.status}
@@ -308,45 +297,46 @@ export default function SearchPage(props: SearchPageProps) {
         </div>
         <div className={styles.lastFetchedInfo}>
           Last updated: {formatDateTime(meta.loadedAt)}
+          {isRefreshing && <span aria-live="polite"> · Refreshing…</span>}
         </div>
       </div>
 
       <div className={styles.tabs}>
         <button
-          className={`${styles.tab} ${activeTab === 'meetings' ? styles.active : ''}`}
+          className={`${styles.tab} ${urlTab === 'meetings' ? styles.active : ''}`}
           onClick={() => handleTabChange('meetings')}
-          aria-selected={activeTab === 'meetings'}
+          aria-selected={urlTab === 'meetings'}
           role="tab"
         >
           Meetings
         </button>
         <button
-          className={`${styles.tab} ${activeTab === 'actions' ? styles.active : ''}`}
+          className={`${styles.tab} ${urlTab === 'actions' ? styles.active : ''}`}
           onClick={() => handleTabChange('actions')}
-          aria-selected={activeTab === 'actions'}
+          aria-selected={urlTab === 'actions'}
           role="tab"
         >
           Action Items
         </button>
         <button
-          className={`${styles.tab} ${activeTab === 'decisions' ? styles.active : ''}`}
+          className={`${styles.tab} ${urlTab === 'decisions' ? styles.active : ''}`}
           onClick={() => handleTabChange('decisions')}
-          aria-selected={activeTab === 'decisions'}
+          aria-selected={urlTab === 'decisions'}
           role="tab"
         >
           Decisions
         </button>
       </div>
 
-      {error && (
+      {errorMessage && (
         <div className={styles.errorContainer} role="alert">
-          {error}
+          {errorMessage}
         </div>
       )}
 
       <div
-        className={`${styles.resultsWrapper} ${isNavigating ? styles.navigating : ''}`}
-        aria-busy={isNavigating}
+        className={`${styles.resultsWrapper} ${isLoading ? styles.navigating : ''}`}
+        aria-busy={isLoading}
       >
         {results.kind === 'meetings' ? (
           <MeetingsTable items={results.items} searchTerm={searchTerm} />
@@ -362,7 +352,7 @@ export default function SearchPage(props: SearchPageProps) {
               type="button"
               className={styles.pagerButton}
               onClick={() => goToOffset(meta.offset - meta.limit)}
-              disabled={meta.offset === 0 || isNavigating}
+              disabled={meta.offset === 0 || isLoading}
             >
               Previous
             </button>
@@ -373,7 +363,7 @@ export default function SearchPage(props: SearchPageProps) {
               type="button"
               className={styles.pagerButton}
               onClick={() => goToOffset(meta.offset + meta.limit)}
-              disabled={!meta.hasMore || isNavigating}
+              disabled={!meta.hasMore || isLoading}
             >
               Next
             </button>
