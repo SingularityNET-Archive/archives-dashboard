@@ -1,33 +1,48 @@
 // pages/charts/index.tsx
 import React from 'react';
-import { useGlobalMeetingSummaries } from '../../context/GlobalMeetingSummariesContext';
+import type { GetServerSideProps } from 'next';
+import type { WorkgroupMonthlyStats } from '../../types/meetings';
+import { loadMeetingSummaries, buildWorkgroupMonthlyStats } from '../../lib/meetingSummaries';
 import WorkgroupCharts from '../../components/charts/WorkgroupCharts';
+import { formatDate } from '../../utils/dateFormatting';
 import styles from '../../styles/charts.module.css';
 
-export default function ChartPage() {
-  const { summaries, loading, error } = useGlobalMeetingSummaries();
+export interface ChartPageProps {
+  stats: WorkgroupMonthlyStats | null;
+  error: string | null;
+}
 
-  if (loading) {
-    return (
-      <div className={styles.loadingContainer}>
-        <div className={styles.loadingSpinner}>Loading analytics data...</div>
-      </div>
-    );
+export const getServerSideProps: GetServerSideProps<ChartPageProps> = async ({ res }) => {
+  res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300');
+
+  try {
+    const { rows } = await loadMeetingSummaries();
+    return { props: { stats: buildWorkgroupMonthlyStats(rows), error: null } };
+  } catch (err) {
+    console.error('Failed to load chart data:', err);
+    return {
+      props: {
+        stats: null,
+        error: err instanceof Error ? err.message : 'Unknown error',
+      },
+    };
   }
+};
 
+export default function ChartPage({ stats, error }: ChartPageProps) {
   if (error) {
     return (
       <div className={styles.errorContainer}>
         <div className={styles.errorMessage}>
           <h2>Error Loading Data</h2>
           <p>There was a problem loading the analytics data. Please try again later.</p>
-          <p className={styles.errorDetails}>{error.message}</p>
+          <p className={styles.errorDetails}>{error}</p>
         </div>
       </div>
     );
   }
 
-  if (!summaries.length) {
+  if (!stats || stats.totalMeetings === 0) {
     return (
       <div className={styles.emptyContainer}>
         <div className={styles.emptyMessage}>
@@ -42,13 +57,13 @@ export default function ChartPage() {
     <div className={styles.chartsContainer}>
       <header className={styles.chartsHeader}>
         <div className={styles.chartsMeta}>
-          <span>Total Meetings: {summaries.length}</span>
-          <span>Last Updated: {new Date(Math.max(...summaries.map(s => new Date(s.updated_at).getTime()))).toLocaleDateString()}</span>
+          <span>Total Meetings: {stats.totalMeetings}</span>
+          <span>Last Updated: {stats.lastUpdated ? formatDate(stats.lastUpdated) : 'Unknown'}</span>
         </div>
       </header>
 
       <div className={styles.chartsContent}>
-        <WorkgroupCharts />
+        <WorkgroupCharts stats={stats} />
       </div>
     </div>
   );

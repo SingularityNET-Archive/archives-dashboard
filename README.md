@@ -1,36 +1,49 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Archives Dashboard
 
-## Getting Started
+A Next.js dashboard and JSON API over the SingularityNET Ambassador Program
+meeting archive. Meeting summaries, action items and decisions can be browsed
+and searched at `/search`, charted at `/charts`, and queried programmatically
+through the API described in [docs/API.md](docs/API.md). The same document is
+published on the site at `/docs/api`, rendered at build time from that file, so
+edit the markdown to update both.
 
-First, run the development server:
+## Getting started
 
 ```bash
+npm install
+cp .env.example .env   # then fill in the values
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Environment variables
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Variable                        | Purpose |
+|---------------------------------|---------|
+| `NEXT_PUBLIC_SUPABASE_URL`      | Supabase project URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon key (the `meetingsummaries` table must allow anon reads) |
+| `SERVER_API_KEY`                | Secret key required by every `/api/*` route. Server-side only. |
 
-## Learn More
+`SERVER_API_KEY` must be set in the hosting environment, otherwise every API
+call returns `500 server_misconfigured`.
 
-To learn more about Next.js, take a look at the following resources:
+## How data flows
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- `lib/meetingSummaries/loader.ts` loads the full dataset from Supabase, pages
+  past the row cap, applies the confirmed/unconfirmed dedupe rules and caches
+  the result in memory for five minutes.
+- `lib/meetingSummaries/search.ts` holds the pure filter, flatten, facet and
+  pagination functions.
+- The API routes under `pages/api/v1/` and the dashboard pages' 
+  `getServerSideProps` both call that module directly, so the dashboard never
+  needs the API key in the browser.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Scripts
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Command         | What it does |
+|-----------------|--------------|
+| `npm run dev`   | Start the dev server |
+| `npm run build` | Production build |
+| `npm run start` | Serve the production build |
+| `npm run lint`  | ESLint |

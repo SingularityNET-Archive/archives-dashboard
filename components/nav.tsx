@@ -1,4 +1,4 @@
-// ../components/nav.tsx
+// components/nav.tsx
 import Link from 'next/link';
 import { useState, useEffect } from "react";
 import { fetchLatestTag } from '../utils/fetchLatestTag';
@@ -6,15 +6,18 @@ import styles from '../styles/nav.module.css';
 
 const Nav = () => {
   const [latestTag, setLatestTag] = useState<string>('');
-  
-  async function getTags() {
-    const tag = await fetchLatestTag();
-    setLatestTag(tag);
-  }
 
   useEffect(() => {
-    getTags(); 
-  }, [setLatestTag]); 
+    let cancelled = false;
+
+    fetchLatestTag().then((tag: string) => {
+      if (!cancelled) setLatestTag(tag);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   return (
     <nav className={styles.routes}>
@@ -27,6 +30,9 @@ const Nav = () => {
           </Link>
           <Link href="/charts" className={styles.navitems}>
             Charts
+          </Link>
+          <Link href="/docs/api" className={styles.navitems}>
+            API
           </Link>
       </div>
       <div>{latestTag}</div>

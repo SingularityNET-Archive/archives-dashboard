@@ -21,11 +21,17 @@ const Home: NextPage = () => {
             >
               Search Archives
             </button>
-            <button 
+            <button
               onClick={() => router.push('/charts')}
               className={styles.navButton}
             >
               View Charts
+            </button>
+            <button
+              onClick={() => router.push('/docs/api')}
+              className={styles.navButton}
+            >
+              API Docs
             </button>
           </div>
         </header>

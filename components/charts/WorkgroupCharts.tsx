@@ -1,204 +1,89 @@
 // components/charts/WorkgroupCharts.tsx
-import React, { useRef, useEffect, useMemo, useCallback } from 'react';
+import React, { useRef, useEffect } from 'react';
 import Chart from 'chart.js/auto';
 import { ChartConfiguration, TooltipItem } from 'chart.js';
-import { useGlobalMeetingSummaries } from '../../context/GlobalMeetingSummariesContext';
+import type { WorkgroupMonthlyStats } from '../../types/meetings';
 import styles from '../../styles/charts/WorkgroupCharts.module.css';
 
-const useChart = (canvasRef: React.RefObject<HTMLCanvasElement>, config: ChartConfiguration) => {
-  useEffect(() => {
-    let chartInstance: Chart | undefined;
+type ChartKind = 'decisions' | 'actions';
 
-    if (canvasRef.current) {
-      const ctx = canvasRef.current.getContext('2d');
-      if (ctx) {
-        // Destroy existing chart if it exists
-        if (chartInstance) {
-          chartInstance.destroy();
-        }
-
-        // Create new chart
-        chartInstance = new Chart(ctx, config);
-      }
-    }
-
-    // Cleanup
-    return () => {
-      if (chartInstance) {
-        chartInstance.destroy();
-      }
-    };
-  }, [canvasRef, config]);
+const COLORS: Record<ChartKind, { current: string; last: string }> = {
+  decisions: { current: 'rgba(53, 162, 235, 0.8)', last: 'rgba(53, 162, 235, 0.4)' },
+  actions: { current: 'rgba(75, 192, 192, 0.8)', last: 'rgba(75, 192, 192, 0.4)' },
 };
 
-const WorkgroupCharts: React.FC = () => {
-  const { summaries, getDecisions, getActionItems } = useGlobalMeetingSummaries();
+function buildConfig(stats: WorkgroupMonthlyStats, kind: ChartKind): ChartConfiguration<'bar'> {
+  const { workgroups, monthNames } = stats;
+  const series = stats[kind];
+  const colors = COLORS[kind];
+
+  return {
+    type: 'bar',
+    data: {
+      labels: workgroups,
+      datasets: [
+        { label: monthNames.current, data: series.current, backgroundColor: colors.current },
+        { label: monthNames.last, data: series.last, backgroundColor: colors.last },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'top' },
+        tooltip: {
+          callbacks: {
+            title: (context: TooltipItem<'bar'>[]) => workgroups[context[0].dataIndex],
+            label: (context: TooltipItem<'bar'>) => {
+              const value = context.parsed.y || 0;
+              return `${context.dataset.label}: ${value} ${value === 1 ? 'item' : 'items'}`;
+            },
+          },
+        },
+      },
+      scales: {
+        y: { beginAtZero: true, ticks: { stepSize: 1 } },
+      },
+    },
+  };
+}
+
+/** Creates a bar chart on the canvas and rebuilds it whenever the stats change. */
+const useStatsChart = (
+  canvasRef: React.RefObject<HTMLCanvasElement | null>,
+  stats: WorkgroupMonthlyStats,
+  kind: ChartKind
+) => {
+  useEffect(() => {
+    const ctx = canvasRef.current?.getContext('2d');
+    if (!ctx) return;
+
+    const chart = new Chart(ctx, buildConfig(stats, kind));
+    return () => chart.destroy();
+  }, [canvasRef, stats, kind]);
+};
+
+const sum = (values: number[]) => values.reduce((total, count) => total + count, 0);
+
+interface WorkgroupChartsProps {
+  /** Pre-computed on the server by buildWorkgroupMonthlyStats. */
+  stats: WorkgroupMonthlyStats;
+}
+
+const WorkgroupCharts: React.FC<WorkgroupChartsProps> = ({ stats }) => {
   const decisionsChartRef = useRef<HTMLCanvasElement>(null);
   const actionsChartRef = useRef<HTMLCanvasElement>(null);
+  const { decisions, actions, monthNames } = stats;
 
-  // Get current and last month dates
-  const dates = useMemo(() => {
-    const now = new Date();
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
-    const lastMonth = currentMonth === 0 ? 11 : currentMonth - 1;
-    const lastMonthYear = currentMonth === 0 ? currentYear - 1 : currentYear;
-
-    return {
-      currentMonth,
-      currentYear,
-      lastMonth,
-      lastMonthYear,
-      monthNames: {
-        current: new Date(currentYear, currentMonth).toLocaleString('default', { month: 'long' }),
-        last: new Date(lastMonthYear, lastMonth).toLocaleString('default', { month: 'long' })
-      }
-    };
-  }, []);
-
-  // Helper function to check if a date is in a specific month
-  const isInMonth = useCallback((dateStr: string, month: number, year: number): boolean => {
-    const date = new Date(dateStr);
-    return date.getMonth() === month && date.getFullYear() === year;
-  }, []);
-
-  // Get all unique workgroups
-  const workgroups = useMemo(() => 
-    Array.from(new Set(summaries.map(s => s.summary.workgroup)))
-      .sort((a, b) => a.localeCompare(b)),
-    [summaries]
-  );
-
-  // Process decisions data
-  const decisionData = useMemo(() => {
-    const decisions = getDecisions();
-    const currentMonthDecisions = workgroups.map(workgroup => 
-      decisions.filter(d => 
-        d.workgroup === workgroup && 
-        isInMonth(d.date, dates.currentMonth, dates.currentYear)
-      ).length
-    );
-    const lastMonthDecisions = workgroups.map(workgroup => 
-      decisions.filter(d => 
-        d.workgroup === workgroup && 
-        isInMonth(d.date, dates.lastMonth, dates.lastMonthYear)
-      ).length
-    );
-    return { currentMonthDecisions, lastMonthDecisions };
-  }, [workgroups, getDecisions, dates, isInMonth]);
-
-  // Process action items data
-  const actionData = useMemo(() => {
-    const actionItems = getActionItems();
-    const currentMonthActions = workgroups.map(workgroup => 
-      actionItems.filter(a => 
-        a.workgroup === workgroup && 
-        a.dueDate && // Add null check for dueDate
-        isInMonth(a.dueDate, dates.currentMonth, dates.currentYear)
-      ).length
-    );
-    const lastMonthActions = workgroups.map(workgroup => 
-      actionItems.filter(a => 
-        a.workgroup === workgroup && 
-        a.dueDate && // Add null check for dueDate
-        isInMonth(a.dueDate, dates.lastMonth, dates.lastMonthYear)
-      ).length
-    );
-    return { currentMonthActions, lastMonthActions };
-  }, [workgroups, getActionItems, dates, isInMonth]);
-
-  const chartOptions = useMemo(() => ({
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        position: 'top' as const,
-      },
-      tooltip: {
-        callbacks: {
-          title: (context: TooltipItem<'bar'>[]) => workgroups[context[0].dataIndex],
-          label: (context: TooltipItem<'bar'>) => {
-            const value = context.parsed.y || 0;
-            return `${context.dataset.label}: ${value} ${value === 1 ? 'item' : 'items'}`;
-          }
-        }
-      }
-    },
-    scales: {
-      y: {
-        beginAtZero: true,
-        ticks: {
-          stepSize: 1
-        }
-      }
-    }
-  }), [workgroups]);
-
-  const decisionsConfig: ChartConfiguration<'bar'> = {
-    type: 'bar',
-    data: {
-      labels: workgroups,
-      datasets: [
-        {
-          label: dates.monthNames.current,
-          data: decisionData.currentMonthDecisions,
-          backgroundColor: 'rgba(53, 162, 235, 0.8)',
-        },
-        {
-          label: dates.monthNames.last,
-          data: decisionData.lastMonthDecisions,
-          backgroundColor: 'rgba(53, 162, 235, 0.4)',
-        },
-      ],
-    },
-    options: chartOptions,
-  };
-
-  const actionsConfig: ChartConfiguration<'bar'> = {
-    type: 'bar',
-    data: {
-      labels: workgroups,
-      datasets: [
-        {
-          label: dates.monthNames.current,
-          data: actionData.currentMonthActions,
-          backgroundColor: 'rgba(75, 192, 192, 0.8)',
-        },
-        {
-          label: dates.monthNames.last,
-          data: actionData.lastMonthActions,
-          backgroundColor: 'rgba(75, 192, 192, 0.4)',
-        },
-      ],
-    },
-    options: chartOptions,
-  };
-
-  // Initialize charts
-  useChart(decisionsChartRef, decisionsConfig);
-  useChart(actionsChartRef, actionsConfig);
-
-  const getTotalItems = useCallback((data: number[]) => 
-    data.reduce((sum, count) => sum + count, 0),
-    []
-  );
-
-  const decisionsTotals = useMemo(() => ({
-    current: getTotalItems(decisionData.currentMonthDecisions),
-    last: getTotalItems(decisionData.lastMonthDecisions)
-  }), [decisionData, getTotalItems]);
-
-  const actionsTotals = useMemo(() => ({
-    current: getTotalItems(actionData.currentMonthActions),
-    last: getTotalItems(actionData.lastMonthActions)
-  }), [actionData, getTotalItems]);
+  useStatsChart(decisionsChartRef, stats, 'decisions');
+  useStatsChart(actionsChartRef, stats, 'actions');
 
   return (
     <div className={styles.chartsGrid}>
       <div className={styles.chartContainer}>
         <h2>Decisions by Workgroup</h2>
         <div className={styles.chartMeta}>
-          <span>Comparing {dates.monthNames.current} ({decisionsTotals.current}) vs {dates.monthNames.last} ({decisionsTotals.last})</span>
+          <span>Comparing {monthNames.current} ({sum(decisions.current)}) vs {monthNames.last} ({sum(decisions.last)})</span>
         </div>
         <div className={styles.chart}>
           <canvas ref={decisionsChartRef} />
@@ -207,7 +92,7 @@ const WorkgroupCharts: React.FC = () => {
       <div className={styles.chartContainer}>
         <h2>Action Items by Workgroup</h2>
         <div className={styles.chartMeta}>
-          <span>Comparing {dates.monthNames.current} ({actionsTotals.current}) vs {dates.monthNames.last} ({actionsTotals.last})</span>
+          <span>Comparing {monthNames.current} ({sum(actions.current)}) vs {monthNames.last} ({sum(actions.last)})</span>
         </div>
         <div className={styles.chart}>
           <canvas ref={actionsChartRef} />

@@ -79,3 +79,46 @@
   color: #4f46e5;
   font-size: 1.25rem;
 }
+.resultsWrapper {
+  position: relative;
+  transition: opacity 150ms ease;
+}
+
+.resultsWrapper.navigating {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.pagerButton {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #4f46e5;
+  background: none;
+  border: 1px solid #c7d2fe;
+  border-radius: 0.375rem;
+  cursor: pointer;
+}
+
+.pagerButton:hover:not(:disabled) {
+  background-color: #eef2ff;
+}
+
+.pagerButton:disabled {
+  color: #9ca3af;
+  border-color: #e5e7eb;
+  cursor: not-allowed;
+}
+
+.pagerInfo {
+  font-size: 0.875rem;
+  color: #6b7280;
+}

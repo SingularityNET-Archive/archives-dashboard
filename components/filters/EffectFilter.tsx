@@ -1,23 +1,20 @@
 // components/filters/EffectFilter.tsx
 import React from 'react';
+import type { FacetCount } from '../../types/meetings';
 import { formatEffectType } from '../../utils/stringFormatting';
 import styles from '../../styles/WorkgroupFilter.module.css';
 
 interface EffectFilterProps {
   value: string;
   onChange: (value: string) => void;
+  options: FacetCount[];
 }
 
-const EffectFilter = ({ value, onChange }: EffectFilterProps) => {
-  const effectTypes = [
-    'affectsOnlyThisWorkgroup',
-    'mayAffectOtherPeople'
-  ];
-
+const EffectFilter = ({ value, onChange, options }: EffectFilterProps) => {
   return (
     <div className={styles.filterContainer}>
-      <label 
-        htmlFor="effect" 
+      <label
+        htmlFor="effect"
         className={styles.filterLabel}
       >
         Effect
@@ -29,9 +26,9 @@ const EffectFilter = ({ value, onChange }: EffectFilterProps) => {
         onChange={(e) => onChange(e.target.value)}
       >
         <option value="">All Effects</option>
-        {effectTypes.map((effect) => (
-          <option key={effect} value={effect}>
-            {formatEffectType(effect)}
+        {options.map((effect) => (
+          <option key={effect.value} value={effect.value}>
+            {formatEffectType(effect.value)}
           </option>
         ))}
       </select>
