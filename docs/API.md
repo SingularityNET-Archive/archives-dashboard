@@ -3,7 +3,7 @@
 Read-only JSON API over the SingularityNET Ambassador Program meeting archive.
 Every endpoint supports filtering, sorting and pagination.
 
-Base path: `/api/v1`
+Base URL: `https://archives-dashboard.netlify.app/api/v1`
 
 ## Authentication
 
@@ -243,7 +243,7 @@ agenda items, action items, decisions, meeting info and tags).
 
 ```bash
 curl -H "x-api-key: $KEY" \
-  "https://<host>/api/v1/meetings?q=treasury&workgroup=Archives%20Workgroup&dateFrom=2025-01-01&limit=10"
+  "https://archives-dashboard.netlify.app/api/v1/meetings?q=treasury&workgroup=Archives%20Workgroup&dateFrom=2025-01-01&limit=10"
 ```
 
 ## GET /api/v1/meetings/{meeting_id}
@@ -251,7 +251,7 @@ curl -H "x-api-key: $KEY" \
 Returns a single meeting summary in `data`. 404 if the id is unknown.
 
 ```bash
-curl -H "x-api-key: $KEY" "https://<host>/api/v1/meetings/<meeting_id>"
+curl -H "x-api-key: $KEY" "https://archives-dashboard.netlify.app/api/v1/meetings/<meeting_id>"
 ```
 
 ## GET /api/v1/action-items
@@ -274,7 +274,7 @@ Items with no due date are excluded whenever a `due*` filter is set.
 
 ```bash
 curl -H "x-api-key: $KEY" \
-  "https://<host>/api/v1/action-items?status=in%20progress&dueFrom=2025-01-01&sort=dueDate&order=asc"
+  "https://archives-dashboard.netlify.app/api/v1/action-items?status=in%20progress&dueFrom=2025-01-01&sort=dueDate&order=asc"
 ```
 
 ## GET /api/v1/decisions
@@ -296,7 +296,7 @@ Returns decisions flattened out of every meeting. Each has `decision`,
 
 ```bash
 curl -H "x-api-key: $KEY" \
-  "https://<host>/api/v1/decisions?effect=mayAffectOtherPeople&q=budget"
+  "https://archives-dashboard.netlify.app/api/v1/decisions?effect=mayAffectOtherPeople&q=budget"
 ```
 
 ## GET /api/v1/facets
@@ -323,8 +323,8 @@ endpoints, and names are matched case-insensitively. `statuses`, `assignees`,
 
 ```bash
 # list the workgroup names, then filter by one (URL-encode spaces)
-curl -H "x-api-key: $KEY" "https://<host>/api/v1/facets"
-curl -H "x-api-key: $KEY" "https://<host>/api/v1/meetings?workgroup=Archives%20Workgroup"
+curl -H "x-api-key: $KEY" "https://archives-dashboard.netlify.app/api/v1/facets"
+curl -H "x-api-key: $KEY" "https://archives-dashboard.netlify.app/api/v1/meetings?workgroup=Archives%20Workgroup"
 ```
 
 ## Fetching everything
@@ -333,8 +333,8 @@ Page size is capped at 500. To download the whole archive, step `offset` by
 `limit` until `meta.hasMore` is `false`:
 
 ```bash
-curl -H "x-api-key: $KEY" "https://<host>/api/v1/meetings?limit=500&offset=0"
-curl -H "x-api-key: $KEY" "https://<host>/api/v1/meetings?limit=500&offset=500"
+curl -H "x-api-key: $KEY" "https://archives-dashboard.netlify.app/api/v1/meetings?limit=500&offset=0"
+curl -H "x-api-key: $KEY" "https://archives-dashboard.netlify.app/api/v1/meetings?limit=500&offset=500"
 # continue while meta.hasMore is true
 ```
 
