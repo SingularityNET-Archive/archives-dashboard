@@ -82,9 +82,12 @@ const emptyResults = (tab: SearchTab): SearchResults => {
 };
 
 export const getServerSideProps: GetServerSideProps<SearchPageProps> = async ({ query, res }) => {
-  // The page is public, so a short shared cache is fine here. The key-protected
-  // API routes must not use a shared cache; see lib/meetingSummaries/http.ts.
-  res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300');
+  // No shared cache: Netlify's Next.js runtime keys its CDN cache without the
+  // page's own query params (see the Netlify-Vary header it emits), so a
+  // cached `?tab=meetings` response would be served for `?tab=decisions`. The
+  // rows are already cached in memory by loadMeetingSummaries, so each request
+  // only pays for filtering. Same policy as lib/meetingSummaries/http.ts.
+  res.setHeader('Cache-Control', 'private, no-store');
 
   const tab = parseTab(query.tab);
   const filters = getFilterStateFromUrl(query);
